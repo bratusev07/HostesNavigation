@@ -28,11 +28,12 @@ class MapFragment : Fragment() {
         mapView = view.findViewById(R.id.mapView) ?: return
         mapHelper = MapHelper(requireContext(), mapView)
 
-        mapHelper.addDefaultMarker(0.446, 0.49, "marker #1")
-        mapHelper.addDefaultMarker(0.37, 0.3, "marker #2")
-        mapHelper.addDefaultMarker(0.62, 0.32, "marker #3")
+        mapHelper.addDefaultMarker(0.446, 0.49, "Г-320")
+        mapHelper.addDefaultMarker(0.37, 0.305, "Г-317")
+        mapHelper.addDefaultMarker(0.62, 0.31, "Г-326")
 
         mapHelper.addPositionMarker( 0.7, 0.6)
         mapHelper.addReferentialListener()
+        mapHelper.addMarkerClickListener()
     }
 }
