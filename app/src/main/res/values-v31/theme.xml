@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.SplashActivity" parent="Theme.AppCompat.NoActionBar">
+
+        <!--<item name="android:windowSplashScreenBackground">#FFFFFF</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#FFFFFF</item>
+        <item name="android:windowSplashScreenBrandingImage">#FFFFFF</item>-->
+
+        <!-- Duration-->
+        <item name="android:windowSplashScreenAnimationDuration">2000</item>
+    </style>
+</resources>
