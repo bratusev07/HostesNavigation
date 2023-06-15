@@ -18,7 +18,7 @@ import ovh.plrapps.mapview.util.AngleDegree
 import ru.bratusev.hostesnavigation.R
 import java.io.InputStream
 
-class MapHelper(private val context: Context) : TileStreamProvider {
+class MapHelper(private val context: Context, private val mapView: MapView) : TileStreamProvider {
 
     private val markerList = ArrayList<MapMarker>()
 
@@ -30,14 +30,20 @@ class MapHelper(private val context: Context) : TileStreamProvider {
         setImageResource(R.drawable.position_marker)
     }
 
-    fun addPositionMarker(mapView: MapView, x: Double, y: Double) {
+    init {
+        mapView.configure(generateConfig())
+        mapView.defineBounds(0.0, 0.0, 1.0, 1.0)
+    }
+
+    fun addPositionMarker(x: Double, y: Double) {
         mapView.addMarker(positionMarker, x, y, -0.5f, -0.5f)
     }
 
-    internal fun addDefaultMarker(mapView: MapView, x: Double, y: Double, name: String) {
+    internal fun addDefaultMarker(x: Double, y: Double, name: String, angel: Float = 0f) {
         val marker = MapMarker(context, x, y, name).apply {
             setImageDrawable(BitmapDrawable(resources, drawText()))
         }
+        marker.rotation = angel
         markerList.add(marker)
         mapView.addMarker(marker, x, y)
     }
@@ -135,5 +141,9 @@ class MapHelper(private val context: Context) : TileStreamProvider {
         tmp = if (tmp > 0) tmp else 0.0F
         mapMarker.scaleX = tmp
         mapMarker.scaleY = tmp
+    }
+
+    internal fun addReferentialListener() {
+        mapView.addReferentialListener(refOwner)
     }
 }
