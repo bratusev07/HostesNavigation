@@ -36,7 +36,7 @@ class MapHelper(private val context: Context, private val mapView: MapView) : Ti
 
     init {
         mapView.configure(generateConfig())
-        mapView.defineBounds(0.0, 0.0, 1.0, 1.0)
+        mapView.defineBounds(0.0, 0.0, 3840.0, 2160.0)
     }
 
     internal fun addPositionMarker(x: Double, y: Double) {
@@ -49,7 +49,7 @@ class MapHelper(private val context: Context, private val mapView: MapView) : Ti
 
     internal fun addDefaultMarker(x: Double, y: Double, name: String, angel: Float = 0f) {
         val marker = MapMarker(context, x, y, name).apply {
-            setImageDrawable(BitmapDrawable(resources, drawText(name)))
+            setImageDrawable(BitmapDrawable(resources, drawText("$name ")))
         }
         marker.rotation = angel
         markerList.add(marker)
