@@ -22,7 +22,7 @@ import ovh.plrapps.mapview.util.AngleDegree
 import ru.bratusev.hostesnavigation.R
 import java.io.InputStream
 
-class MapHelper(private val context: Context, private val mapView: MapView) : TileStreamProvider {
+class MapHelper(private val context: Context, private val mapView: MapView, private val tileLevel: Int) : TileStreamProvider {
 
     private val markerList = ArrayList<MapMarker>()
 
@@ -85,16 +85,16 @@ class MapHelper(private val context: Context, private val mapView: MapView) : Ti
         return bitmap
     }
 
-    private fun generateConfig(): MapViewConfiguration {
+    internal fun generateConfig(): MapViewConfiguration {
         return MapViewConfiguration(5, 3840, 2160, 256, this).setMaxScale(2f)
             .enableRotation().setStartScale(0f)
     }
 
     override fun getTileStream(row: Int, col: Int, zoomLvl: Int): InputStream? {
         return try {
-            context.assets?.open("tiles/$zoomLvl/$row/$col.jpg")
+            context.assets?.open("tiles$tileLevel/$zoomLvl/$row/$col.jpg")
         } catch (e: Exception) {
-            context.assets?.open("tiles/blank.png")
+            context.assets?.open("tiles$tileLevel/blank.png")
         }
     }
 

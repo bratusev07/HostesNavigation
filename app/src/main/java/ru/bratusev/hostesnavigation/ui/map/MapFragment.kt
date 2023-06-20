@@ -3,6 +3,7 @@ package ru.bratusev.hostesnavigation.ui.map
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
@@ -11,9 +12,9 @@ import org.json.JSONTokener
 import ovh.plrapps.mapview.MapView
 import ru.bratusev.hostesnavigation.R
 import ru.bratusev.hostesnavigation.navigation.Map
-import java.lang.Exception
+import ru.bratusev.hostesnavigation.ui.views.LevelBar
 
-class MapFragment : Fragment() {
+class MapFragment : Fragment(), View.OnTouchListener {
     private lateinit var parentView: ViewGroup
     private lateinit var mapView: MapView
     private lateinit var mapHelper: MapHelper
@@ -28,6 +29,10 @@ class MapFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_map, container, false).also {
+            val levelBar = it.findViewById<LevelBar>(R.id.levelBar)
+            levelBar.setLevelRange(1,7)
+            levelBar.setOnTouchListener(this)
+
             parentView = it as ViewGroup
             val json = requireActivity().assets?.open("map.json")?.reader().use { it?.readText() }
             if (json != null) {
@@ -39,7 +44,7 @@ class MapFragment : Fragment() {
 
     private fun configureMapView(view: View) {
         mapView = view.findViewById(R.id.mapView) ?: return
-        mapHelper = MapHelper(requireContext(), mapView)
+        mapHelper = MapHelper(requireContext(), mapView, 1)
 
         try {
             for (dot in dotList) {
@@ -71,5 +76,20 @@ class MapFragment : Fragment() {
             dot.setConnected(jsonDot.getJSONArray("connected"))
             dotList.add(dot)
         }
+    }
+
+    override fun onTouch(v: View?, event: MotionEvent?): Boolean {
+        when (event?.action) {
+            MotionEvent.ACTION_UP -> {
+                try {
+                    mapView.destroy()
+                    mapHelper = MapHelper(requireContext(), mapView, (v as LevelBar).getLevel())
+                }catch (e: Exception){
+                    Log.d("MyLog", e.message.toString())
+                }
+                return true
+            }
+        }
+        return v!!.onTouchEvent(event)
     }
 }
