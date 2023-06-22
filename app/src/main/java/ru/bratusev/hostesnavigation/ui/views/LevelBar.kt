@@ -6,13 +6,11 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.util.AttributeSet
-import android.util.DisplayMetrics
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.ContextCompat
 import ru.bratusev.hostesnavigation.R
-import kotlin.math.roundToInt
 
 class LevelBar(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
 
@@ -21,6 +19,23 @@ class LevelBar(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
     private var minLevel = 0
     private val duration = 60
     private var deltaY = 0
+
+    private var width = 0
+    private var height = 0
+
+    private var lBox = 5f
+    private var tBox = 5f
+    private var rBox = 0f
+    private var bBox = 0f
+    private var rxBox = 10f / 1.86f
+    private var ryBox = 10f / 1.86f
+
+    private var lCur = 25f
+    private var tCur = 100f
+    private var rCur = 75f
+    private var bCur = 150f
+    private var rxCur = 10f / 1.86f
+    private var ryCur = 10f / 1.86f
 
     fun getLevel(): Int {
         return currentLevel
@@ -33,13 +48,25 @@ class LevelBar(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        val width = MeasureSpec.getSize(widthMeasureSpec)
-        val height = MeasureSpec.getSize(heightMeasureSpec)
+        width = MeasureSpec.getSize(widthMeasureSpec)
+        height = MeasureSpec.getSize(heightMeasureSpec)
+        Log.d("MyLog", "$width $height")
         setMeasuredDimension(width, height)
+        setSize()
+    }
+
+    private fun setSize() {
+        rBox = width.toFloat() / 1.86f
+        bBox = height.toFloat() / 1.86f
+
+        lCur = width.toFloat() / 10f
+        tCur = height.toFloat() / 2.9f - height.toFloat()/7.3f
+        rCur = width.toFloat() - width.toFloat()/2 - 1f
+        bCur = height.toFloat() / 2.9f
     }
 
     private val fillPaint = Paint().apply {
-        color = ContextCompat.getColor(context!!,R.color.brand)
+        color = ContextCompat.getColor(context!!, R.color.brand)
         style = Paint.Style.FILL
     }
 
@@ -49,43 +76,24 @@ class LevelBar(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
     }
 
     private val strokePaint = Paint().apply {
-        color = ContextCompat.getColor(context!!,R.color.brand)
+        color = ContextCompat.getColor(context!!, R.color.brand)
         style = Paint.Style.STROKE
-        strokeWidth = pxToDp(2F)
+        strokeWidth = 4f
     }
 
     private val textPaint = Paint().apply {
         isAntiAlias = true
         color = Color.BLACK
-        this.textSize = pxToDp(36F)
+        this.textSize = context?.resources?.displayMetrics?.scaledDensity!!*16*1.5f
         typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
     }
 
     private val textPaintWhite = Paint().apply {
         isAntiAlias = true
         color = Color.WHITE
-        this.textSize = pxToDp(36F)
+        this.textSize = context?.resources?.displayMetrics?.scaledDensity!!*16*1.5f
         typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
     }
-
-    fun pxToDp(px: Float): Float {
-        val displayMetrics = context.resources.displayMetrics
-        return (3.67*(px / (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT)).roundToInt().toFloat()).toFloat()
-    }
-
-    private val lBox = pxToDp(15f)
-    private val tBox = pxToDp(10f)
-    private val rBox = pxToDp(85f)
-    private val bBox = pxToDp(240f)
-    private val rxBox = pxToDp(10f)
-    private val ryBox = pxToDp(10f)
-
-    private val lCur = pxToDp(25f)
-    private val tCur = pxToDp(100f)
-    private val rCur = pxToDp(75f)
-    private val bCur = pxToDp(150f)
-    private val rxCur = pxToDp(10f)
-    private val ryCur = pxToDp(10f)
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -96,21 +104,21 @@ class LevelBar(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
     }
 
     private fun drawLevel(canvas: Canvas) {
-        val leftTextMargin = pxToDp(41f)
-        val specLeftTextMargin = pxToDp(35f)
-        val deltaMargin = pxToDp(12f)
-        val topTextMargin = pxToDp(136f)
+        val leftTextMargin = lCur*2.1f
+        val specLeftTextMargin = height / 16f
+        val deltaMargin = height / 36f
+        val topTextMargin = tCur + textPaint.textSize
 
         if (currentLevel != maxLevel) {
-            if (currentLevel + 1 < 0) canvas.drawText((currentLevel + 1).toString(), specLeftTextMargin, topTextMargin - textPaint.textSize * 2, textPaint)
-            else if (currentLevel + 1  in 0..9) canvas.drawText((currentLevel + 1).toString(), leftTextMargin, topTextMargin - textPaint.textSize * 2, textPaint)
-            else canvas.drawText((currentLevel + 1).toString(), leftTextMargin - deltaMargin, topTextMargin - textPaint.textSize * 2, textPaint)
+            if (currentLevel + 1 < 0) canvas.drawText((currentLevel + 1).toString(), specLeftTextMargin, topTextMargin - textPaint.textSize * 1.6f, textPaint)
+            else if (currentLevel + 1 in 0..9) canvas.drawText((currentLevel + 1).toString(), leftTextMargin, topTextMargin - textPaint.textSize * 1.6f, textPaint)
+            else canvas.drawText((currentLevel + 1).toString(), leftTextMargin - deltaMargin, topTextMargin - textPaint.textSize * 1.6f, textPaint)
         }
 
         if (currentLevel != minLevel) {
-            if (currentLevel - 1 < 0) canvas.drawText((currentLevel - 1).toString(), specLeftTextMargin, topTextMargin + textPaint.textSize * 2, textPaint)
-            else if (currentLevel - 1 in 0..9) canvas.drawText((currentLevel - 1).toString(), leftTextMargin, topTextMargin + textPaint.textSize * 2, textPaint)
-            else canvas.drawText((currentLevel - 1).toString(), leftTextMargin - deltaMargin, topTextMargin + textPaint.textSize * 2, textPaint)
+            if (currentLevel - 1 < 0) canvas.drawText((currentLevel - 1).toString(), specLeftTextMargin, topTextMargin + textPaint.textSize * 1.6f, textPaint)
+            else if (currentLevel - 1 in 0..9) canvas.drawText((currentLevel - 1).toString(), leftTextMargin, topTextMargin + textPaint.textSize * 1.6f, textPaint)
+            else canvas.drawText((currentLevel - 1).toString(), leftTextMargin - deltaMargin, topTextMargin + textPaint.textSize * 1.6f, textPaint)
         }
 
         if (currentLevel + 0 in 0..9) canvas.drawText((currentLevel + 0).toString(), leftTextMargin, topTextMargin, textPaintWhite)
@@ -150,14 +158,6 @@ class LevelBar(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
             }
 
             MotionEvent.ACTION_UP -> {
-                /*Log.d("MyLog", event.y.toString())
-                if(!isMove){
-                    Log.d("MyLog", event.y.toString())
-                    if(event.y < pxToDp(0f)) currentLevel++
-                    if(event.y > pxToDp(136f) + textPaint.textSize * 2) currentLevel--
-                    invalidate()
-                    isUp = true
-                }*/
                 return true
             }
         }
