@@ -1,11 +1,20 @@
 package ru.bratusev.hostesnavigation.ui.map
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -18,6 +27,7 @@ class MapFragment : Fragment(), View.OnTouchListener {
     private lateinit var parentView: ViewGroup
     private lateinit var mapView: MapView
     private lateinit var mapHelper: MapHelper
+    private lateinit var levelBar: LevelBar
 
     private var dotList: ArrayList<Map.Dot> = ArrayList()
     private var width = 0
@@ -29,8 +39,8 @@ class MapFragment : Fragment(), View.OnTouchListener {
         savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_map, container, false).also {
-            val levelBar = it.findViewById<LevelBar>(R.id.levelBar)
-            levelBar.setLevelRange(1,7)
+            levelBar = it.findViewById<LevelBar>(R.id.levelBar)
+            levelBar.setLevelRange(1,2)
             levelBar.setOnTouchListener(this)
 
             parentView = it as ViewGroup
@@ -82,8 +92,18 @@ class MapFragment : Fragment(), View.OnTouchListener {
         when (event?.action) {
             MotionEvent.ACTION_UP -> {
                 try {
-                    mapView.destroy()
-                    mapHelper = MapHelper(requireContext(), mapView, (v as LevelBar).getLevel())
+                    val level = levelBar.getLevel()
+                    parentView.removeView(mapView)
+                    parentView.removeView(levelBar)
+                    mapView = MapView(requireContext())
+                    parentView.addView(mapView)
+                    parentView.addView(levelBar)
+
+                    val scale = mapHelper.getScale()
+                    val rotation = mapHelper.rotation
+                    mapHelper = MapHelper(requireContext(), mapView, level)
+                    mapHelper.setScale(scale)
+                    mapHelper.rotation = rotation
                 }catch (e: Exception){
                     Log.d("MyLog", e.message.toString())
                 }

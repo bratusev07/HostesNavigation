@@ -12,9 +12,9 @@
     <ru.bratusev.hostesnavigation.ui.views.LevelBar
         android:id="@+id/levelBar"
         android:layout_width="50dp"
-        android:layout_height="110dp"
+        android:layout_height="140dp"
         android:layout_gravity="center|left"
-        android:layout_margin="15dp"
+        android:layout_margin="5dp"
         tools:ignore="RtlHardcoded" />
 
 </FrameLayout>

@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import android.util.Log
 import android.view.View
 import androidx.appcompat.widget.AppCompatImageView
 import ovh.plrapps.mapview.MapView
@@ -33,6 +34,8 @@ class MapHelper(private val context: Context, private val mapView: MapView, priv
     private val positionMarker = AppCompatImageView(context).apply {
         setImageResource(R.drawable.position_marker)
     }
+
+    internal var rotation = 0F
 
     init {
         mapView.configure(generateConfig())
@@ -130,7 +133,7 @@ class MapHelper(private val context: Context, private val mapView: MapView, priv
 
     private fun setMarkerScale(scale: Float, mapMarker: MapMarker) {
         val mapMax = 2.0
-        val mapMin = 0.1875
+        val mapMin = 0.3
         val markerMin = 0
         val markerMax = 3
         var tmp =
@@ -156,5 +159,11 @@ class MapHelper(private val context: Context, private val mapView: MapView, priv
                 }
             }
         })
+    }
+    fun setScale(scale: Float){
+        mapView.scale = scale
+    }
+    fun getScale(): Float{
+        return mapView.scale
     }
 }
