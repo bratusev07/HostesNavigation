@@ -10,6 +10,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.util.Log
 import android.view.View
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.content.ContextCompat
 import ovh.plrapps.mapview.MapView
 import ovh.plrapps.mapview.MapViewConfiguration
 import ovh.plrapps.mapview.ReferentialData
@@ -19,6 +20,10 @@ import ovh.plrapps.mapview.api.addMarker
 import ovh.plrapps.mapview.api.setMarkerTapListener
 import ovh.plrapps.mapview.core.TileStreamProvider
 import ovh.plrapps.mapview.markers.MarkerTapListener
+import ovh.plrapps.mapview.paths.PathPoint
+import ovh.plrapps.mapview.paths.PathView
+import ovh.plrapps.mapview.paths.addPathView
+import ovh.plrapps.mapview.paths.toFloatArray
 import ovh.plrapps.mapview.util.AngleDegree
 import ru.bratusev.hostesnavigation.R
 import java.io.InputStream
@@ -88,7 +93,7 @@ class MapHelper(private val context: Context, private val mapView: MapView, priv
         return bitmap
     }
 
-    internal fun generateConfig(): MapViewConfiguration {
+    private fun generateConfig(): MapViewConfiguration {
         return MapViewConfiguration(5, 3840, 2160, 256, this).setMaxScale(2f)
             .enableRotation().setStartScale(0f)
     }
@@ -114,7 +119,7 @@ class MapHelper(private val context: Context, private val mapView: MapView, priv
             rotateMaker()
         }
 
-        internal var angleDegree: AngleDegree = 0f
+        var angleDegree: AngleDegree = 0f
             set(value) {
                 field = value
                 rotateMaker()
@@ -160,10 +165,46 @@ class MapHelper(private val context: Context, private val mapView: MapView, priv
             }
         })
     }
-    fun setScale(scale: Float){
+    internal fun setScale(scale: Float){
         mapView.scale = scale
     }
-    fun getScale(): Float{
+    internal fun getScale(): Float{
         return mapView.scale
+    }
+
+    internal fun createPath(){
+        val pathPoints: ArrayList<PathPoint> = ArrayList()
+
+        pathPoints.add(PathPoint(1898.0,1038.0))
+        pathPoints.add(PathPoint(1898.0,858.0))
+        pathPoints.add(PathPoint(598.0,858.0))
+        pathPoints.add(PathPoint(568.0,1692.0))
+        pathPoints.add(PathPoint(658.0,1849.0))
+
+        drawPath(pathPoints)
+    }
+
+    private val strokePaint = Paint().apply {
+        color = ContextCompat.getColor(context, R.color.brand)
+        style = Paint.Style.STROKE
+        strokeWidth = 9f
+    }
+
+    private fun drawPath(pathPoints: ArrayList<PathPoint>){
+        val pathView = PathView(mapView.context)
+        mapView.addPathView(pathView)
+
+        val pathList = listOfNotNull(
+            pathPoints.toFloatArray(mapView)
+        ).map {
+            object : PathView.DrawablePath {
+                override val visible: Boolean = true
+                override var path: FloatArray = it
+                override var paint: Paint? = strokePaint
+                override val width: Float = 10f
+            }
+        }
+
+        pathView.updatePaths(pathList)
     }
 }

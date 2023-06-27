@@ -7,14 +7,24 @@
     <ovh.plrapps.mapview.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
-    <ru.bratusev.hostesnavigation.ui.views.LevelBar
+    <!--<ru.bratusev.hostesnavigation.ui.views.LevelBar
         android:id="@+id/levelBar"
         android:layout_width="80dp"
         android:layout_height="230dp"
         android:layout_gravity="center|left"
         android:layout_margin="15dp"
-        tools:ignore="RtlHardcoded" />
+        tools:ignore="RtlHardcoded" />-->
+
+    <NumberPicker
+        android:id="@+id/picker"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center|left"
+        android:layout_margin="14dp"
+        android:background="@drawable/level_border"
+        android:descendantFocusability="blocksDescendants"
+        android:theme="@style/AppTheme.Picker" />
 
 </FrameLayout>
