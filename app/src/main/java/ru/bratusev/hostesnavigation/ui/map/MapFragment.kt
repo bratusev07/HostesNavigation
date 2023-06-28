@@ -14,6 +14,7 @@ import org.json.JSONTokener
 import ovh.plrapps.mapview.MapView
 import ru.bratusev.hostesnavigation.R
 import ru.bratusev.hostesnavigation.navigation.Map
+import ru.bratusev.hostesnavigation.navigation.Navigation
 
 
 class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
@@ -21,6 +22,7 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
     private lateinit var mapView: MapView
     private lateinit var mapHelper: MapHelper
     private lateinit var levelPicker: NumberPicker
+    private lateinit var navigation: Navigation
 
     private var dotList: ArrayList<Map.Dot> = ArrayList()
     private var width = 0
@@ -33,11 +35,12 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
     ): View? {
         return inflater.inflate(R.layout.fragment_map, container, false).also {
             parentView = it as ViewGroup
-
+            navigation = Navigation()
             val json = requireActivity().assets?.open("map.json")?.reader().use { it?.readText() }
             if (json != null) {
                 loadFromString(json)
-            } else Log.d("MyLog", "json is null")
+                navigation.loadMapFromJson(json)
+            }
             configureMapView(it)
         }
     }
@@ -52,7 +55,7 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
             val delta = (levelPicker.minValue + levelPicker.value - str.size) % levelPicker.size
             levelPicker.scrollBy(0, -(delta * levelPicker.getChildAt(0).height))
             levelPicker.setOnValueChangedListener(this)
-        }catch (e: Exception){
+        } catch (e: Exception) {
             Log.d("MyLog", e.message.toString())
         }
     }
@@ -65,27 +68,14 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
 
     private fun configureMapView(view: View) {
         configureLevelPicker(view)
-        Log.d("MyLog", levelPicker.value.toString())
         mapView = view.findViewById(R.id.mapView) ?: return
-        mapHelper = MapHelper(requireContext(), mapView, levelPicker.value)
+        mapHelper = MapHelper(requireContext(), mapView, levelPicker.value, navigation)
 
-        try {
-            for (dot in dotList) {
-                mapHelper.addDefaultMarker(
-                    dot.getX().toDouble(),
-                    dot.getY().toDouble(),
-                    dot.getId().toString()
-                )
-            }
-        } catch (e: Exception) {
-            Log.d("MyLog", e.message.toString())
-        }
-
+        mapHelper.addAllMarkers(dotList)
         mapHelper.addPositionMarker(0.7, 0.6)
         mapHelper.addReferentialListener()
         mapHelper.addMarkerClickListener()
-
-        mapHelper.createPath()
+        mapHelper.updatePath(0, 66)
     }
 
     private fun loadFromString(json: String) {
@@ -112,13 +102,18 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
                 parentView.removeView(levelPicker)
                 mapView = MapView(requireContext())
                 parentView.addView(mapView)
+                configureMapView(mapView)
                 parentView.addView(levelPicker)
                 configureLevelPicker(parentView)
                 val scale = mapHelper.getScale()
                 val rotation = mapHelper.rotation
-                mapHelper = MapHelper(requireContext(), mapView, newVal)
+                mapHelper = MapHelper(requireContext(), mapView, newVal, navigation)
+                mapHelper.addAllMarkers(dotList)
                 mapHelper.setScale(scale)
                 mapHelper.rotation = rotation
+                mapHelper.updatePath(2, 43)
+                mapHelper.addReferentialListener()
+                mapHelper.addMarkerClickListener()
             }
         } catch (e: Exception) {
             Log.d("MyLog", e.message.toString())

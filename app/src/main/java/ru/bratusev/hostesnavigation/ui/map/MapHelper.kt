@@ -20,15 +20,21 @@ import ovh.plrapps.mapview.api.addMarker
 import ovh.plrapps.mapview.api.setMarkerTapListener
 import ovh.plrapps.mapview.core.TileStreamProvider
 import ovh.plrapps.mapview.markers.MarkerTapListener
-import ovh.plrapps.mapview.paths.PathPoint
 import ovh.plrapps.mapview.paths.PathView
 import ovh.plrapps.mapview.paths.addPathView
-import ovh.plrapps.mapview.paths.toFloatArray
+import ovh.plrapps.mapview.paths.removePathView
 import ovh.plrapps.mapview.util.AngleDegree
 import ru.bratusev.hostesnavigation.R
+import ru.bratusev.hostesnavigation.navigation.Map
+import ru.bratusev.hostesnavigation.navigation.Navigation
 import java.io.InputStream
 
-class MapHelper(private val context: Context, private val mapView: MapView, private val tileLevel: Int) : TileStreamProvider {
+class MapHelper(
+    private val context: Context,
+    private val mapView: MapView,
+    private val tileLevel: Int,
+    private val navigation: Navigation
+) : TileStreamProvider {
 
     private val markerList = ArrayList<MapMarker>()
 
@@ -40,6 +46,13 @@ class MapHelper(private val context: Context, private val mapView: MapView, priv
         setImageResource(R.drawable.position_marker)
     }
 
+    private lateinit var pathView: PathView
+
+    private var newScale = 0f
+    private var widthMax = 50f
+    private var widthMin = 10f
+    private var maxScale = 2f
+    private var minScale = 0f
     internal var rotation = 0F
 
     init {
@@ -55,7 +68,7 @@ class MapHelper(private val context: Context, private val mapView: MapView, priv
         mapView.addMarker(finishMarker, x, y, -0.5f, -0.5f)
     }
 
-    internal fun addDefaultMarker(x: Double, y: Double, name: String, angel: Float = 0f) {
+    private fun addDefaultMarker(x: Double, y: Double, name: String, angel: Float = 0f) {
         val marker = MapMarker(context, x, y, name).apply {
             setImageDrawable(BitmapDrawable(resources, drawText("$name ")))
         }
@@ -94,6 +107,7 @@ class MapHelper(private val context: Context, private val mapView: MapView, priv
     }
 
     private fun generateConfig(): MapViewConfiguration {
+        pathView = PathView(context)
         return MapViewConfiguration(5, 3840, 2160, 256, this).setMaxScale(2f)
             .enableRotation().setStartScale(0f)
     }
@@ -116,6 +130,7 @@ class MapHelper(private val context: Context, private val mapView: MapView, priv
             for (mapMarker in markerList) {
                 setMarkerScale(refData.scale, mapMarker)
             }
+            newScale = refData.scale
             rotateMaker()
         }
 
@@ -152,6 +167,15 @@ class MapHelper(private val context: Context, private val mapView: MapView, priv
         mapView.addReferentialListener(refOwner)
     }
 
+    internal fun addPathView(){
+        mapView.addPathView(pathView)
+    }
+
+    internal fun deletePaths() {
+        mapView.removePathView(pathView)
+        pathView = PathView(context)
+    }
+
     internal fun addMarkerClickListener() {
         mapView.setMarkerTapListener(object : MarkerTapListener {
             override fun onMarkerTap(view: View, x: Int, y: Int) {
@@ -165,46 +189,47 @@ class MapHelper(private val context: Context, private val mapView: MapView, priv
             }
         })
     }
-    internal fun setScale(scale: Float){
+
+    internal fun setScale(scale: Float) {
         mapView.scale = scale
     }
-    internal fun getScale(): Float{
+
+    internal fun getScale(): Float {
         return mapView.scale
-    }
-
-    internal fun createPath(){
-        val pathPoints: ArrayList<PathPoint> = ArrayList()
-
-        pathPoints.add(PathPoint(1898.0,1038.0))
-        pathPoints.add(PathPoint(1898.0,858.0))
-        pathPoints.add(PathPoint(598.0,858.0))
-        pathPoints.add(PathPoint(568.0,1692.0))
-        pathPoints.add(PathPoint(658.0,1849.0))
-
-        drawPath(pathPoints)
     }
 
     private val strokePaint = Paint().apply {
         color = ContextCompat.getColor(context, R.color.brand)
-        style = Paint.Style.STROKE
-        strokeWidth = 9f
+        strokeCap = Paint.Cap.ROUND
     }
 
-    private fun drawPath(pathPoints: ArrayList<PathPoint>){
-        val pathView = PathView(mapView.context)
-        mapView.addPathView(pathView)
-
-        val pathList = listOfNotNull(
-            pathPoints.toFloatArray(mapView)
-        ).map {
-            object : PathView.DrawablePath {
-                override val visible: Boolean = true
-                override var path: FloatArray = it
-                override var paint: Paint? = strokePaint
-                override val width: Float = 10f
-            }
+    internal fun updatePath(start: Int, finish: Int) {
+        val myPath = navigation.path(start, finish)
+        var temp = widthMin + (widthMax - widthMin) * newScale / maxScale
+        if (newScale == minScale) temp = widthMin
+        else if (newScale == maxScale) temp = widthMax
+        val drawablePath = object : PathView.DrawablePath {
+            override val visible: Boolean = true
+            override var path: FloatArray = myPath as FloatArray
+            override var paint: Paint? = strokePaint
+            override val width: Float = temp
         }
 
-        pathView.updatePaths(pathList)
+        pathView.updatePaths(listOf(drawablePath))
+        addPathView()
+    }
+
+    internal fun addAllMarkers(dotList: java.util.ArrayList<Map.Dot>) {
+        try {
+            for (dot in dotList) {
+                addDefaultMarker(
+                    dot.getX().toDouble(),
+                    dot.getY().toDouble(),
+                    dot.getId().toString()
+                )
+            }
+        } catch (e: Exception) {
+            Log.d("MyLog", e.message.toString())
+        }
     }
 }
