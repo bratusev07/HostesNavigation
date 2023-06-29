@@ -1,6 +1,8 @@
 package ru.bratusev.hostesnavigation.ui.map
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -72,10 +74,10 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
         mapHelper = MapHelper(requireContext(), mapView, levelPicker.value, navigation)
 
         mapHelper.addAllMarkers(dotList)
-        mapHelper.addPositionMarker(0.7, 0.6)
+        mapHelper.addPositionMarker(dotList[0].getX().toDouble(), dotList[0].getY().toDouble())
         mapHelper.addReferentialListener()
         mapHelper.addMarkerClickListener()
-        mapHelper.updatePath(0, 66)
+        mapHelper.updatePath()
     }
 
     private fun loadFromString(json: String) {
@@ -111,12 +113,22 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
                 mapHelper.addAllMarkers(dotList)
                 mapHelper.setScale(scale)
                 mapHelper.rotation = rotation
-                mapHelper.updatePath(2, 43)
+                mapHelper.addPositionMarker(dotList[0].getX().toDouble(), dotList[0].getY().toDouble())
                 mapHelper.addReferentialListener()
                 mapHelper.addMarkerClickListener()
+                putData(0,136)
+                mapHelper.updatePath()
             }
         } catch (e: Exception) {
             Log.d("MyLog", e.message.toString())
         }
+    }
+
+    private fun putData(start: Int, finish: Int){
+        val sharedPref: SharedPreferences = requireContext().getSharedPreferences("path", Context.MODE_PRIVATE)
+        val editor: SharedPreferences.Editor = sharedPref.edit()
+        editor.putInt("start", start)
+        editor.putInt("finish", finish)
+        editor.apply()
     }
 }

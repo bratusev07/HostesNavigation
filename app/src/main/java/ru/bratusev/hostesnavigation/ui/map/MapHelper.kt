@@ -1,6 +1,7 @@
 package ru.bratusev.hostesnavigation.ui.map
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -10,6 +11,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.util.Log
 import android.view.View
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import ovh.plrapps.mapview.MapView
 import ovh.plrapps.mapview.MapViewConfiguration
@@ -55,6 +57,9 @@ class MapHelper(
     private var minScale = 0f
     internal var rotation = 0F
 
+    private var isPathSet = false
+    private var isFinishSet = false
+
     init {
         mapView.configure(generateConfig())
         mapView.defineBounds(0.0, 0.0, 3840.0, 2160.0)
@@ -65,6 +70,20 @@ class MapHelper(
     }
 
     internal fun addFinishMarker(x: Double, y: Double) {
+        mapView.addMarker(finishMarker, x, y, -0.5f, -0.5f)
+    }
+
+    private fun addFinishMarker(id: String) {
+        var x = 0.0
+        var y = 0.0
+        for (marker in markerList) {
+            if(marker.name == id){
+                x = marker.x
+                y = marker.y
+                break
+            }
+        }
+        isFinishSet = true
         mapView.addMarker(finishMarker, x, y, -0.5f, -0.5f)
     }
 
@@ -132,6 +151,7 @@ class MapHelper(
             }
             newScale = refData.scale
             rotateMaker()
+            updatePath()
         }
 
         var angleDegree: AngleDegree = 0f
@@ -167,7 +187,8 @@ class MapHelper(
         mapView.addReferentialListener(refOwner)
     }
 
-    internal fun addPathView(){
+    private fun addPathView(){
+        isPathSet = true
         mapView.addPathView(pathView)
     }
 
@@ -203,11 +224,17 @@ class MapHelper(
         strokeCap = Paint.Cap.ROUND
     }
 
-    internal fun updatePath(start: Int, finish: Int) {
-        val myPath = navigation.path(start, finish)
+    internal fun updatePath() {
+        var myStart = getStart()
+        var myFinish = getFinish()
+        if(tileLevel==1) myStart = 135
+        else myFinish = 33
+        Log.d("MyPath", "$myStart $myFinish")
+        val myPath = navigation.path(myStart, myFinish)
         var temp = widthMin + (widthMax - widthMin) * newScale / maxScale
         if (newScale == minScale) temp = widthMin
         else if (newScale == maxScale) temp = widthMax
+
         val drawablePath = object : PathView.DrawablePath {
             override val visible: Boolean = true
             override var path: FloatArray = myPath as FloatArray
@@ -216,7 +243,8 @@ class MapHelper(
         }
 
         pathView.updatePaths(listOf(drawablePath))
-        addPathView()
+        if(!isFinishSet && myFinish == getFinish()) addFinishMarker(myFinish.toString())
+        if(!isPathSet) addPathView()
     }
 
     internal fun addAllMarkers(dotList: java.util.ArrayList<Map.Dot>) {
@@ -231,5 +259,15 @@ class MapHelper(
         } catch (e: Exception) {
             Log.d("MyLog", e.message.toString())
         }
+    }
+
+    private fun getStart(): Int {
+        val sharedPref: SharedPreferences = context.getSharedPreferences("path", Context.MODE_PRIVATE)
+        return sharedPref.getInt("start", 0)
+    }
+
+    private fun getFinish(): Int {
+        val sharedPref: SharedPreferences = context.getSharedPreferences("path", Context.MODE_PRIVATE)
+        return sharedPref.getInt("finish", 0)
     }
 }
