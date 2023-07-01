@@ -81,6 +81,7 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
     }
 
     private fun loadFromString(json: String) {
+        Log.d("MyLog","MapFragment")
         val map = JSONTokener(json).nextValue() as JSONObject
         val jsonDots = map.getJSONArray("dots")
         width = map.getInt("width")

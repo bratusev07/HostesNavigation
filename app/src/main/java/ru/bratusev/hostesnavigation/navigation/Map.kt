@@ -1,5 +1,6 @@
 package ru.bratusev.hostesnavigation.navigation
 
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -19,6 +20,12 @@ class Map {
         while (++i < jsonDots.length()) {
             val jsonDot = jsonDots.getJSONObject(i)
             val dot = Dot(jsonDot.getDouble("x").toFloat(), jsonDot.getDouble("y").toFloat())
+            try {
+                Log.d("MyLevel", jsonDot.getInt("level").toString())
+                dot.setLevel(jsonDot.getInt("level"))
+            } catch (e: Exception) {
+                dot.setLevel(1)
+            }
             dot.setId(jsonDot.getInt("id"))
             dot.setConnected(jsonDot.getJSONArray("connected"))
             dots.add(dot)
@@ -55,12 +62,12 @@ class Map {
         private var g = 0f
         private var h = 0f
         private var visited = false
+        private var level = 1
         private var fromId = -1
         private var nei = ArrayList<Int>()
 
-        fun setPos(x: Float, y: Float) {
-            this.x = x;
-            this.y = y;
+        fun setLevel(level: Int) {
+            this.level = level
         }
 
         fun setG(g: Float) {
@@ -73,10 +80,6 @@ class Map {
 
         fun setH(h: Float) {
             this.h = h
-        }
-
-        fun getH(): Float {
-            return h
         }
 
         fun setFromId(id: Int) {
@@ -113,14 +116,6 @@ class Map {
 
         fun getY(): Float {
             return y
-        }
-
-        fun setX(x: Float) {
-            this.x = x
-        }
-
-        fun setY(y: Float) {
-            this.y = y
         }
 
         fun setConnected(nei: JSONArray) {
