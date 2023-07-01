@@ -70,8 +70,11 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
 
     private fun configureMapView(view: View) {
         configureLevelPicker(view)
+        val str = arrayOf("1", "2")
+        str.reverse()
+        val level = str[levelPicker.value-1].toInt()
         mapView = view.findViewById(R.id.mapView) ?: return
-        mapHelper = MapHelper(requireContext(), mapView, levelPicker.value, navigation)
+        mapHelper = MapHelper(requireContext(), mapView, level, navigation)
 
         mapHelper.addAllMarkers(dotList)
         mapHelper.addPositionMarker(dotList[0].getX().toDouble(), dotList[0].getY().toDouble())
@@ -92,14 +95,17 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
             val dot = Map.Dot(jsonDot.getDouble("x").toFloat(), jsonDot.getDouble("y").toFloat())
             dot.setId(jsonDot.getInt("id"))
             dot.setConnected(jsonDot.getJSONArray("connected"))
+            dot.setLevel(jsonDot.getInt("level"))
             dotList.add(dot)
         }
     }
 
     @SuppressLint("ResourceAsColor", "SoonBlockedPrivateApi")
     override fun onValueChange(picker: NumberPicker?, oldVal: Int, newVal: Int) {
+        val str = arrayOf("1", "2")
+        str.reverse()
         try {
-            Log.d("MyLog", newVal.toString())
+            val level = str[picker?.value!! -1].toInt()
             if (oldVal != newVal) {
                 parentView.removeView(mapView)
                 parentView.removeView(levelPicker)
@@ -110,7 +116,7 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
                 configureLevelPicker(parentView)
                 val scale = mapHelper.getScale()
                 val rotation = mapHelper.rotation
-                mapHelper = MapHelper(requireContext(), mapView, newVal, navigation)
+                mapHelper = MapHelper(requireContext(), mapView, level, navigation)
                 mapHelper.addAllMarkers(dotList)
                 mapHelper.setScale(scale)
                 mapHelper.rotation = rotation

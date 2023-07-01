@@ -20,12 +20,7 @@ class Map {
         while (++i < jsonDots.length()) {
             val jsonDot = jsonDots.getJSONObject(i)
             val dot = Dot(jsonDot.getDouble("x").toFloat(), jsonDot.getDouble("y").toFloat())
-            try {
-                Log.d("MyLevel", jsonDot.getInt("level").toString())
-                dot.setLevel(jsonDot.getInt("level"))
-            } catch (e: Exception) {
-                dot.setLevel(1)
-            }
+            dot.setLevel(jsonDot.getInt("level"))
             dot.setId(jsonDot.getInt("id"))
             dot.setConnected(jsonDot.getJSONArray("connected"))
             dots.add(dot)
@@ -68,6 +63,10 @@ class Map {
 
         fun setLevel(level: Int) {
             this.level = level
+        }
+
+        fun getLevel(): Int{
+            return level
         }
 
         fun setG(g: Float) {

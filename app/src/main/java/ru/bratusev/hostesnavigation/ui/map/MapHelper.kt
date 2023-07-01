@@ -66,7 +66,8 @@ class MapHelper(
     }
 
     internal fun addPositionMarker(x: Double, y: Double) {
-        mapView.addMarker(positionMarker, x, y, -0.5f, -0.5f)
+        val level = if(getStart() > 134) 2 else 1
+        if(level == tileLevel) mapView.addMarker(positionMarker, x, y, -0.5f, -0.5f)
     }
 
     internal fun addFinishMarker(x: Double, y: Double) {
@@ -87,13 +88,13 @@ class MapHelper(
         mapView.addMarker(finishMarker, x, y, -0.5f, -0.5f)
     }
 
-    private fun addDefaultMarker(x: Double, y: Double, name: String, angel: Float = 0f) {
+    private fun addDefaultMarker(x: Double, y: Double, level: Int, name: String, angel: Float = 0f) {
         val marker = MapMarker(context, x, y, name).apply {
             setImageDrawable(BitmapDrawable(resources, drawText("$name ")))
         }
         marker.rotation = angel
         markerList.add(marker)
-        mapView.addMarker(marker, x, y)
+        if(tileLevel == level) mapView.addMarker(marker, x, y)
     }
 
     private fun drawText(
@@ -227,7 +228,7 @@ class MapHelper(
     internal fun updatePath() {
         var myStart = getStart()
         var myFinish = getFinish()
-        if(tileLevel==1) myStart = 135
+        if(tileLevel==2) myStart = 135
         else myFinish = 33
         Log.d("MyPath", "$myStart $myFinish")
         val myPath = navigation.path(myStart, myFinish)
@@ -253,6 +254,7 @@ class MapHelper(
                 addDefaultMarker(
                     dot.getX().toDouble(),
                     dot.getY().toDouble(),
+                    dot.getLevel(),
                     dot.getId().toString()
                 )
             }
