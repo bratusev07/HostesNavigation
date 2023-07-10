@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.NumberPicker
+import android.widget.Toast
 import androidx.core.view.size
 import androidx.fragment.app.Fragment
 import org.json.JSONObject
@@ -37,6 +38,10 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
     ): View? {
         return inflater.inflate(R.layout.fragment_map, container, false).also {
             parentView = it as ViewGroup
+            /*val fileHelper = FileHelper(requireContext())
+            if(fileHelper.unzip("tiles.zip") == true){
+                Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show()
+            }*/
             navigation = Navigation()
             val json = requireActivity().assets?.open("map.json")?.reader().use { it?.readText() }
             if (json != null) {
@@ -84,7 +89,6 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
     }
 
     private fun loadFromString(json: String) {
-        Log.d("MyLog","MapFragment")
         val map = JSONTokener(json).nextValue() as JSONObject
         val jsonDots = map.getJSONArray("dots")
         width = map.getInt("width")

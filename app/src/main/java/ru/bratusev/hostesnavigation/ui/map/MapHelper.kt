@@ -1,5 +1,6 @@
 package ru.bratusev.hostesnavigation.ui.map
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
@@ -8,6 +9,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import android.os.Environment
 import android.util.Log
 import android.view.View
 import androidx.appcompat.widget.AppCompatImageView
@@ -29,6 +31,8 @@ import ovh.plrapps.mapview.util.AngleDegree
 import ru.bratusev.hostesnavigation.R
 import ru.bratusev.hostesnavigation.navigation.Map
 import ru.bratusev.hostesnavigation.navigation.Navigation
+import java.io.File
+import java.io.FileInputStream
 import java.io.InputStream
 
 class MapHelper(
@@ -37,6 +41,9 @@ class MapHelper(
     private val tileLevel: Int,
     private val navigation: Navigation
 ) : TileStreamProvider {
+
+    private val SDPath = Environment.getExternalStorageDirectory().absolutePath + "/Android/data/ru.bratusev.hostesnavigation"
+    private val unzipPath = "$SDPath/files/tiles/"
 
     private val markerList = ArrayList<MapMarker>()
 
@@ -132,11 +139,13 @@ class MapHelper(
             .enableRotation().setStartScale(0f)
     }
 
+    @SuppressLint("SdCardPath")
     override fun getTileStream(row: Int, col: Int, zoomLvl: Int): InputStream? {
         return try {
-            context.assets?.open("tiles$tileLevel/$zoomLvl/$row/$col.jpg")
+            FileInputStream(File(unzipPath, "tiles$tileLevel/$zoomLvl/$row/$col.jpg"))
         } catch (e: Exception) {
-            context.assets?.open("tiles$tileLevel/blank.png")
+            Log.d("MyLog", e.message.toString() + e.stackTraceToString())
+            FileInputStream(File(unzipPath, "tiles$tileLevel/blank.png"))
         }
     }
 

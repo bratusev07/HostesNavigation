@@ -50,7 +50,6 @@ class LevelBar(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         width = MeasureSpec.getSize(widthMeasureSpec)
         height = MeasureSpec.getSize(heightMeasureSpec)
-        Log.d("MyLog", "$width $height")
         setMeasuredDimension(width, height)
         setSize()
     }
@@ -139,7 +138,6 @@ class LevelBar(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
 
             MotionEvent.ACTION_MOVE -> {
                 isMove = true
-                Log.d("MyLog", "Move")
                 if ((event.y.toInt() - deltaY) > duration) {
                     if (currentLevel < maxLevel) {
                         currentLevel++
