@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import net.lingala.zip4j.ZipFile
+import java.io.File
 
 class FileHelper(private val context: Context) {
 
@@ -37,5 +38,11 @@ class FileHelper(private val context: Context) {
             Log.d("MyLog", e.message.toString())
             false
         }
+    }
+
+    internal fun getLevelCount(fileName: String): Int{
+        val directory = File("$unzipPath/$fileName")
+        val files = directory.listFiles()
+        return files?.size ?: 0
     }
 }

@@ -30,6 +30,7 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
     private var dotList: ArrayList<Map.Dot> = ArrayList()
     private var width = 0
     private var height = 0
+    private var levelCount = 0
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,10 +39,11 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
     ): View? {
         return inflater.inflate(R.layout.fragment_map, container, false).also {
             parentView = it as ViewGroup
-            /*val fileHelper = FileHelper(requireContext())
-            if(fileHelper.unzip("tiles.zip") == true){
+            val fileHelper = FileHelper(requireContext())
+            /*if(fileHelper.unzip("tiles.zip") == true){
                 Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show()
             }*/
+            levelCount = fileHelper.getLevelCount("tiles1")-1
             navigation = Navigation()
             val json = requireActivity().assets?.open("map.json")?.reader().use { it?.readText() }
             if (json != null) {
@@ -79,7 +81,7 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
         str.reverse()
         val level = str[levelPicker.value-1].toInt()
         mapView = view.findViewById(R.id.mapView) ?: return
-        mapHelper = MapHelper(requireContext(), mapView, level, navigation)
+        mapHelper = MapHelper(requireContext(), mapView, level,levelCount, width, height, navigation)
 
         mapHelper.addAllMarkers(dotList)
         mapHelper.addPositionMarker(dotList[0].getX().toDouble(), dotList[0].getY().toDouble())
@@ -120,7 +122,7 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
                 configureLevelPicker(parentView)
                 val scale = mapHelper.getScale()
                 val rotation = mapHelper.rotation
-                mapHelper = MapHelper(requireContext(), mapView, level, navigation)
+                mapHelper = MapHelper(requireContext(), mapView, level, levelCount, width, height, navigation)
                 mapHelper.addAllMarkers(dotList)
                 mapHelper.setScale(scale)
                 mapHelper.rotation = rotation

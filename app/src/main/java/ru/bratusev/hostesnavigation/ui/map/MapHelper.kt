@@ -39,6 +39,9 @@ class MapHelper(
     private val context: Context,
     private val mapView: MapView,
     private val tileLevel: Int,
+    private val levelCount: Int,
+    private val mapWidth: Int,
+    private val mapHeight: Int,
     private val navigation: Navigation
 ) : TileStreamProvider {
 
@@ -68,8 +71,8 @@ class MapHelper(
     private var isFinishSet = false
 
     init {
-        mapView.configure(generateConfig())
-        mapView.defineBounds(0.0, 0.0, 3840.0, 2160.0)
+        mapView.configure(generateConfig(levelCount, mapWidth, mapHeight))
+        mapView.defineBounds(0.0, 0.0, mapWidth.toDouble(), mapHeight.toDouble())
     }
 
     internal fun addPositionMarker(x: Double, y: Double) {
@@ -133,9 +136,9 @@ class MapHelper(
         return bitmap
     }
 
-    private fun generateConfig(): MapViewConfiguration {
+    private fun generateConfig(levelCount: Int = 5, fullWidth: Int = 3840, fullHeight: Int = 2160): MapViewConfiguration {
         pathView = PathView(context)
-        return MapViewConfiguration(5, 3840, 2160, 256, this).setMaxScale(2f)
+        return MapViewConfiguration(levelCount, fullWidth, fullHeight, 256, this).setMaxScale(2f)
             .enableRotation().setStartScale(0f)
     }
 
