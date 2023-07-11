@@ -9,13 +9,20 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!--<ru.bratusev.hostesnavigation.ui.views.LevelBar
-        android:id="@+id/levelBar"
-        android:layout_width="80dp"
-        android:layout_height="230dp"
-        android:layout_gravity="center|left"
-        android:layout_margin="15dp"
-        tools:ignore="RtlHardcoded" />-->
+    <ImageButton
+        android:id="@+id/btn_zoomIn"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="right|center"
+        android:layout_marginBottom="70dp"
+        android:background="@drawable/plus"/>
+
+    <ImageButton
+        android:id="@+id/btn_zoomOut"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="right|center"
+        android:background="@drawable/minus"/>
 
     <NumberPicker
         android:id="@+id/picker"

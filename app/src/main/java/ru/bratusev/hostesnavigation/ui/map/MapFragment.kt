@@ -7,9 +7,10 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.OnClickListener
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.NumberPicker
-import android.widget.Toast
 import androidx.core.view.size
 import androidx.fragment.app.Fragment
 import org.json.JSONObject
@@ -20,11 +21,13 @@ import ru.bratusev.hostesnavigation.navigation.Map
 import ru.bratusev.hostesnavigation.navigation.Navigation
 
 
-class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
+class MapFragment : Fragment(), NumberPicker.OnValueChangeListener, OnClickListener{
     private lateinit var parentView: ViewGroup
     private lateinit var mapView: MapView
     private lateinit var mapHelper: MapHelper
     private lateinit var levelPicker: NumberPicker
+    private lateinit var zoomIn: ImageButton
+    private lateinit var zoomOut: ImageButton
     private lateinit var navigation: Navigation
 
     private var dotList: ArrayList<Map.Dot> = ArrayList()
@@ -43,6 +46,10 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
             /*if(fileHelper.unzip("tiles.zip") == true){
                 Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show()
             }*/
+            zoomIn = it.findViewById(R.id.btn_zoomIn)
+            zoomOut = it.findViewById(R.id.btn_zoomOut)
+            zoomIn.setOnClickListener(this)
+            zoomOut.setOnClickListener(this)
             levelCount = fileHelper.getLevelCount("tiles1")-1
             navigation = Navigation()
             val json = requireActivity().assets?.open("map.json")?.reader().use { it?.readText() }
@@ -115,10 +122,14 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
             if (oldVal != newVal) {
                 parentView.removeView(mapView)
                 parentView.removeView(levelPicker)
+                parentView.removeView(zoomIn)
+                parentView.removeView(zoomOut)
                 mapView = MapView(requireContext())
                 parentView.addView(mapView)
                 configureMapView(mapView)
                 parentView.addView(levelPicker)
+                parentView.addView(zoomIn)
+                parentView.addView(zoomOut)
                 configureLevelPicker(parentView)
                 val scale = mapHelper.getScale()
                 val rotation = mapHelper.rotation
@@ -143,5 +154,12 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener {
         editor.putInt("start", start)
         editor.putInt("finish", finish)
         editor.apply()
+    }
+
+    override fun onClick(v: View?) {
+        when(v?.id){
+            R.id.btn_zoomIn -> mapHelper.zoomIn()
+            R.id.btn_zoomOut -> mapHelper.zoomOut()
+        }
     }
 }

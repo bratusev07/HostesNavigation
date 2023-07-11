@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Interpolator
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
@@ -13,7 +14,6 @@ import android.os.Environment
 import android.util.Log
 import android.view.View
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import ovh.plrapps.mapview.MapView
 import ovh.plrapps.mapview.MapViewConfiguration
@@ -283,5 +283,17 @@ class MapHelper(
     private fun getFinish(): Int {
         val sharedPref: SharedPreferences = context.getSharedPreferences("path", Context.MODE_PRIVATE)
         return sharedPref.getInt("finish", 0)
+    }
+
+    internal fun zoomIn() {
+        newScale += (maxScale - minScale) / levelCount
+        if (newScale > maxScale) newScale = maxScale
+        mapView.smoothScaleFromFocalPoint(mapView.offsetX,mapView.offsetY, newScale)
+    }
+
+    internal fun zoomOut() {
+        newScale -= (maxScale - minScale) / levelCount
+        if (newScale < minScale) newScale = minScale
+        mapView.smoothScaleFromFocalPoint(mapView.offsetX,mapView.offsetY, newScale)
     }
 }
