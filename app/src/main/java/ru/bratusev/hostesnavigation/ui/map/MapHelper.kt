@@ -40,13 +40,14 @@ class MapHelper(
     private val mapView: MapView,
     private val tileLevel: Int,
     private val levelCount: Int,
+    private val locationName: String,
     private val mapWidth: Int,
     private val mapHeight: Int,
     private val navigation: Navigation
 ) : TileStreamProvider {
 
     private val SDPath = Environment.getExternalStorageDirectory().absolutePath + "/Android/data/ru.bratusev.hostesnavigation"
-    private val unzipPath = "$SDPath/files/tiles/"
+    private var unzipPath = "$SDPath/files/locations/"
 
     private val markerList = ArrayList<MapMarker>()
 
@@ -145,10 +146,10 @@ class MapHelper(
     @SuppressLint("SdCardPath")
     override fun getTileStream(row: Int, col: Int, zoomLvl: Int): InputStream? {
         return try {
-            FileInputStream(File(unzipPath, "tiles$tileLevel/$zoomLvl/$row/$col.jpg"))
+            FileInputStream(File("$unzipPath/$locationName/", "tiles$tileLevel/$zoomLvl/$row/$col.jpg"))
         } catch (e: Exception) {
             Log.d("MyLog", e.message.toString() + e.stackTraceToString())
-            FileInputStream(File(unzipPath, "tiles$tileLevel/blank.png"))
+            FileInputStream(File("$unzipPath/$locationName/", "tiles$tileLevel/blank.png"))
         }
     }
 
