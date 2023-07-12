@@ -35,6 +35,8 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener, OnClickListe
     private var height = 0
     private var levelCount = 0
     private var locationName = "location1"
+    private lateinit var fileHelper: FileHelper
+    private val levelArray = ArrayList<String>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -43,32 +45,21 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener, OnClickListe
     ): View? {
         return inflater.inflate(R.layout.fragment_map, container, false).also {
             parentView = it as ViewGroup
-            val fileHelper = FileHelper(requireContext(), locationName)
+            fileHelper = FileHelper(requireContext(), locationName)
             //fileHelper.fileDownload("1rq4aFmBEvLCAhXTQ3YPbtaHkoc2_8B8v")
-            zoomIn = it.findViewById(R.id.btn_zoomIn)
-            zoomOut = it.findViewById(R.id.btn_zoomOut)
-            zoomIn.setOnClickListener(this)
-            zoomOut.setOnClickListener(this)
             navigation = Navigation()
-
-            levelCount = fileHelper.getLevelCount("tiles1")-1
             val json = fileHelper.getJsonMap(locationName)
-            if (json != null) {
-                loadFromString(json)
-                navigation.loadMapFromJson(json)
-            }
-            configureMapView(it)
+            loadFromString(json)
+            configureViews(it)
         }
     }
 
-    private fun configureLevelPicker(view: View) {
+    private fun configureLevelPicker(levelPicker: NumberPicker) {
         try {
-            val str = arrayOf("1", "2")
-            str.reverse()
-            levelPicker = view.findViewById(R.id.picker)
+            levelArray.reverse()
             levelPicker.wrapSelectorWheel = false
-            initPickerWithString(1, str.size, levelPicker, str)
-            val delta = (levelPicker.minValue + levelPicker.value - str.size) % levelPicker.size
+            initPickerWithString(1, levelArray.size, levelPicker, levelArray.toTypedArray())
+            val delta = (levelPicker.minValue + levelPicker.value - levelArray.size) % levelPicker.size
             levelPicker.scrollBy(0, -(delta * levelPicker.getChildAt(0).height))
             levelPicker.setOnValueChangedListener(this)
         } catch (e: Exception) {
@@ -82,22 +73,32 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener, OnClickListe
         p.displayedValues = str
     }
 
-    private fun configureMapView(view: View) {
-        configureLevelPicker(view)
-        val str = arrayOf("1", "2")
-        str.reverse()
-        val level = str[levelPicker.value-1].toInt()
+    private fun configureViews(view: View, confMap: Boolean = true) {
+        zoomIn = view.findViewById(R.id.btn_zoomIn)
+        zoomOut = view.findViewById(R.id.btn_zoomOut)
+        zoomIn.setOnClickListener(this)
+        zoomOut.setOnClickListener(this)
+        levelPicker = view.findViewById(R.id.picker)
         mapView = view.findViewById(R.id.mapView) ?: return
-        mapHelper = MapHelper(requireContext(), mapView, level,levelCount,locationName, width, height, navigation)
+        configureLevelPicker(levelPicker)
+        if(confMap)configureMapView(mapView)
+    }
 
+    private fun configureMapView(mapView: MapView, scale: Float = 0f, rotation: Float = 0f, level: Int = 1){
+        mapHelper = MapHelper(requireContext(), mapView, level,levelCount,locationName, width, height, navigation)
+        mapHelper.rotation = rotation
+        mapHelper.setScale(scale)
         mapHelper.addAllMarkers(dotList)
         mapHelper.addPositionMarker(dotList[0].getX().toDouble(), dotList[0].getY().toDouble())
         mapHelper.addReferentialListener()
         mapHelper.addMarkerClickListener()
+        putData(0, 136)
         mapHelper.updatePath()
     }
 
     private fun loadFromString(json: String) {
+        levelCount = fileHelper.getLevelCount("tiles1")-1
+        navigation.loadMapFromJson(json)
         val map = JSONTokener(json).nextValue() as JSONObject
         val jsonDots = map.getJSONArray("dots")
         width = map.getInt("width")
@@ -109,43 +110,38 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener, OnClickListe
             dot.setId(jsonDot.getInt("id"))
             dot.setConnected(jsonDot.getJSONArray("connected"))
             dot.setLevel(jsonDot.getInt("level"))
+            if(!levelArray.contains(dot.getLevel().toString())){
+                levelArray.add(dot.getLevel().toString())
+            }
             dotList.add(dot)
         }
+        levelArray.sort()
+        Log.d("LevelArray", levelArray.toString())
     }
 
     @SuppressLint("ResourceAsColor", "SoonBlockedPrivateApi")
     override fun onValueChange(picker: NumberPicker?, oldVal: Int, newVal: Int) {
-        val str = arrayOf("1", "2")
-        str.reverse()
         try {
-            val level = str[picker?.value!! -1].toInt()
+            val level = levelArray[picker?.value!! -1].toInt()
             if (oldVal != newVal) {
-                parentView.removeView(mapView)
-                parentView.removeView(levelPicker)
-                parentView.removeView(zoomIn)
-                parentView.removeView(zoomOut)
-                mapView = MapView(requireContext())
-                parentView.addView(mapView)
-                configureMapView(mapView)
-                parentView.addView(levelPicker)
-                parentView.addView(zoomIn)
-                parentView.addView(zoomOut)
-                configureLevelPicker(parentView)
+                updateViews()
+                configureViews(parentView, false)
                 val scale = mapHelper.getScale()
                 val rotation = mapHelper.rotation
-                mapHelper = MapHelper(requireContext(), mapView, level, levelCount,locationName, width, height, navigation)
-                mapHelper.addAllMarkers(dotList)
-                mapHelper.setScale(scale)
-                mapHelper.rotation = rotation
-                mapHelper.addPositionMarker(dotList[0].getX().toDouble(), dotList[0].getY().toDouble())
-                mapHelper.addReferentialListener()
-                mapHelper.addMarkerClickListener()
-                putData(0,136)
-                mapHelper.updatePath()
+                configureMapView(mapView, scale, rotation, level)
             }
         } catch (e: Exception) {
             Log.d("MyLog", e.message.toString())
         }
+    }
+
+    private fun updateViews() {
+        parentView.removeAllViewsInLayout()
+        mapView = MapView(requireContext())
+        parentView.addView(mapView)
+        parentView.addView(levelPicker)
+        parentView.addView(zoomIn)
+        parentView.addView(zoomOut)
     }
 
     private fun putData(start: Int, finish: Int){
