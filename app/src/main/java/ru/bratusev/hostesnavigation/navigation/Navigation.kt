@@ -1,20 +1,47 @@
+/**
+ * Класс для вычисления путей на графе
+ * @Author Братусев Денис
+ * @Since 01.06.2023
+ * @Version 1.0
+ * */
 package ru.bratusev.hostesnavigation.navigation
 
 import kotlin.math.sqrt
 
+/**
+ * Класс для вычисления кратчайшего пути на графе
+ * @Constructor Создаёт пустой объект класса Navigation
+ */
 class Navigation {
-
+    /**
+     * @See [Map]
+     * */
     private var map: Map = Map()
+    /**
+     * @See [Navigation.PathCash]
+     * */
     private var pathCash: PathCash?
 
     init {
         pathCash = null
     }
 
+    /**
+     * Возвращает точку графа
+     * @See [Map.Dot]
+     * @Param index идентификатор точки
+     * @Return точка графа по идентификатору
+     */
     fun getDot(index: Int): Map.Dot {
         return map.getDot(index)
     }
 
+    /**
+     * Вычисляет длинну маршрута
+     * @Param start идентификатор точки начала пути
+     * @Param finish идентификатор точки конца маршрута
+     * @Return длинна маршрута
+     */
     fun dist(start: Int, finish: Int): Float {
         val nodeArray = path(start, finish)
         var res = 0f
@@ -28,6 +55,12 @@ class Navigation {
         return res
     }
 
+    /**
+     * Вычисляет кратчайший маршрут
+     * @Param start идентификатор точки начала пути
+     * @Param finish идентификатор точки конца маршрута
+     * @Return массив координат точек маршрута
+     */
     fun path(start: Int, finish: Int): FloatArray? {
         if (pathCash?.from == start && pathCash?.to == finish) return pathCash?.path
         val que = ArrayList<Map.Dot>()
@@ -64,6 +97,11 @@ class Navigation {
         return null
     }
 
+    /**
+     * Вычисляет кратчайший маршрут от текущей точки
+     * @Param finish идентификатор точки конца маршрута
+     * @Return массив координат точек маршрута
+     */
     private fun reconstructPath(finish: Int): FloatArray {
         val path = ArrayList<Int>()
         path.add(finish)
@@ -105,10 +143,19 @@ class Navigation {
         return lines
     }
 
+    /**
+     * Получает [dots], [width] и [height] из json строки
+     * @Param [json] - строка в формате json с графом
+     */
     fun loadMapFromJson(json: String) {
         map.loadFromString(json)
     }
 
+    /**
+     * Path cash
+     *
+     * @Constructor Create empty Path cash
+     */
     abstract class PathCash {
         abstract var path: FloatArray
         abstract var from: Int

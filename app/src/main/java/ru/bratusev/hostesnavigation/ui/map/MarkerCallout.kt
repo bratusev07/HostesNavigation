@@ -1,3 +1,9 @@
+/**
+ * Класс для настройки всплывающих над маркером окон
+ * @Author Братусев Денис
+ * @Since 01.06.2023
+ * @Version 1.0
+ * */
 package ru.bratusev.hostesnavigation.ui.map
 
 import android.content.Context
@@ -11,6 +17,11 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import ru.bratusev.hostesnavigation.R
 
+/**
+ * Класс для настройки всплывающих над маркером окон
+ * @Constructor создаёт шаблон окна над маркером
+ * @Param context контекст для работы с ресурсами
+ */
 class MarkerCallout(context: Context) : RelativeLayout(context) {
     private val mTitle: TextView
     private val mSubTitle: TextView
@@ -21,6 +32,9 @@ class MarkerCallout(context: Context) : RelativeLayout(context) {
         mSubTitle = findViewById(R.id.callout_subtitle)
     }
 
+    /**
+     * Метод для анимирования появления окна
+     */
     fun transitionIn() {
         val scaleAnimation = ScaleAnimation(
             0f, 1f, 0f, 1f, Animation.RELATIVE_TO_SELF,
@@ -35,10 +49,20 @@ class MarkerCallout(context: Context) : RelativeLayout(context) {
         startAnimation(animationSet)
     }
 
+    /**
+     * Set title
+     *
+     * @Param title
+     */
     fun setTitle(title: String) {
         mTitle.text = title
     }
 
+    /**
+     * Set sub title
+     *
+     * @Param subtitle
+     */
     fun setSubTitle(subtitle: String) {
         mSubTitle.text = subtitle
     }

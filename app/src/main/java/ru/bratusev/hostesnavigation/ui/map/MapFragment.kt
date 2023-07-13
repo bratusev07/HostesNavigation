@@ -1,3 +1,9 @@
+/**
+ * Класс для работы с MapFragment
+ * @Author Братусев Денис
+ * @Since 01.06.2023
+ * @Version 1.0
+ * */
 package ru.bratusev.hostesnavigation.ui.map
 
 import android.annotation.SuppressLint
@@ -21,6 +27,10 @@ import ru.bratusev.hostesnavigation.navigation.Map
 import ru.bratusev.hostesnavigation.navigation.Navigation
 
 
+/**
+ * Класс для работы с MapFragment
+ * @Constructor Создаёт пустой MapFragment
+ */
 class MapFragment : Fragment(), NumberPicker.OnValueChangeListener, OnClickListener{
     private lateinit var parentView: ViewGroup
     private lateinit var mapView: MapView
@@ -30,6 +40,17 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener, OnClickListe
     private lateinit var zoomOut: ImageButton
     private lateinit var navigation: Navigation
 
+    /**
+     * @Param [dotList] массив точек на карте
+     * @See [Map.Dot]
+     * @Param [width] реальная ширина карты
+     * @Param [height] реальная высота карты
+     * @Param [levelCount] количество уровней приближения
+     * @Param [locationName] название подгружаемой локации
+     * @Param [fileHelper] класс для работы с файловой системой
+     * @See [FileHelper]
+     * @Param [levelArray] массив этажей в здании
+     * */
     private var dotList: ArrayList<Map.Dot> = ArrayList()
     private var width = 0
     private var height = 0
@@ -54,6 +75,12 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener, OnClickListe
         }
     }
 
+    /**
+     * Метод для настройки view выбора этажа
+     * @Param [levelPicker] view для выбора номера этажа
+     *
+     * @See [MapFragment.initPickerWithString]
+     * */
     private fun configureLevelPicker(levelPicker: NumberPicker) {
         try {
             levelArray.reverse()
@@ -67,12 +94,25 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener, OnClickListe
         }
     }
 
-    private fun initPickerWithString(min: Int, max: Int, p: NumberPicker, str: Array<String>) {
+    /**
+     * Метод для настройки диапазона значений, отображаемых в [levelPicker]
+     * @Param [min] минимальный номер этажа
+     * @Param [max] максимальный номер этажа
+     * @Param [p] view для выбора этажа которую мы настраиваем
+     * @Param [levels] массив номеров этажей
+     *
+     * @See [MapFragment.configureLevelPicker]
+     * */
+    private fun initPickerWithString(min: Int, max: Int, p: NumberPicker, levels: Array<String>) {
         p.minValue = min
         p.maxValue = max
-        p.displayedValues = str
+        p.displayedValues = levels
     }
 
+    /**
+     * Метод для поиска и настройки работы с view элементами
+     * @Param [view] родительское view
+     * @Param [confMap] флаг для проверки сконфигурированность [mapView]*/
     private fun configureViews(view: View, confMap: Boolean = true) {
         zoomIn = view.findViewById(R.id.btn_zoomIn)
         zoomOut = view.findViewById(R.id.btn_zoomOut)
@@ -84,6 +124,14 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener, OnClickListe
         if(confMap)configureMapView(mapView)
     }
 
+    /**
+     * Метод для настройки [mapHelper]
+     * @See [MapHelper]
+     * @Param [mapView] view для настройки
+     * @Param [scale] уровень приближения карты
+     * @Param [rotation] угол поворота карты
+     * @Param [level] номер отображаемого на карте этажа
+     * */
     private fun configureMapView(mapView: MapView, scale: Float = 0f, rotation: Float = 0f, level: Int = 1){
         mapHelper = MapHelper(requireContext(), mapView, level,levelCount,locationName, width, height, navigation)
         mapHelper.rotation = rotation
@@ -96,6 +144,10 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener, OnClickListe
         mapHelper.updatePath()
     }
 
+    /**
+     * Получает [dots], [width], [height] и [levelCount] из json строки
+     * @Param [json] - строка в формате json с графом
+     */
     private fun loadFromString(json: String) {
         levelCount = fileHelper.getLevelCount("tiles1")-1
         navigation.loadMapFromJson(json)
@@ -119,6 +171,11 @@ class MapFragment : Fragment(), NumberPicker.OnValueChangeListener, OnClickListe
         Log.d("LevelArray", levelArray.toString())
     }
 
+    /**
+     * Метод для обработки обновления значения [levelPicker]
+     * @See [MapFragment.configureViews]
+     * @See [MapFragment.configureMapView]
+     * */
     @SuppressLint("ResourceAsColor", "SoonBlockedPrivateApi")
     override fun onValueChange(picker: NumberPicker?, oldVal: Int, newVal: Int) {
         try {
