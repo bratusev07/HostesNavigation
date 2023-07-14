@@ -19,6 +19,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat.registerReceiver
 import net.lingala.zip4j.ZipFile
 import java.io.File
+import java.io.FileNotFoundException
 
 /**
  * Класс для работы с файловой системой
@@ -46,13 +47,17 @@ class FileHelper(private val context: Context, val locationName: String) {
      * @See [FileHelper.onComplete] ресивер для обработки конца загрузки
      */
     internal fun fileDownload(uRl: String) {
-        dataPath+= "$locationName/"
-        unzipPath+= "$locationName/"
+        dataPath += "$locationName/"
+        unzipPath += "$locationName/"
         val request = DownloadManager.Request(Uri.parse(convertUrl(uRl)))
             .setTitle("$locationName.zip")
             .setDescription("Downloading")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalFilesDir(context, "locations/$locationName", "$locationName.zip")
+            .setDestinationInExternalFilesDir(
+                context,
+                "locations/$locationName",
+                "$locationName.zip"
+            )
             .setAllowedOverMetered(true)
             .setAllowedOverRoaming(true)
         val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -82,15 +87,21 @@ class FileHelper(private val context: Context, val locationName: String) {
 
     /**
      * Получает строковое представление карты из файла
-     * @Param name название локации для отображения
+     * @Param [name] название локации для отображения
      * @Return карта в строковом представлении
      */
-    internal fun getJsonMap(name: String): String{
-        return try {
-            return File("$dataPath$name/map.json").readText()
-        }catch (e: Exception){
-            e.message.toString()
+    internal fun getJsonMap(name: String): String {
+        if (checkStorageLocation()) {
+            return try {
+                return File("$dataPath$name/map.json").readText()
+            } catch (e: Exception) {
+                e.message.toString()
+            }
+        } else {
+            //TODO: Добавить обработку отсутствия карты
+            //fileDownload("1rq4aFmBEvLCAhXTQ3YPbtaHkoc2_8B8v")
         }
+        return "empty location"
     }
 
     /**
@@ -113,12 +124,24 @@ class FileHelper(private val context: Context, val locationName: String) {
 
     /**
      * Получение количество уровней приближения карты по количеству папок в директории
-     * @Param fileName название локации для карты
+     * @Param [fileName] название локации для карты
      * @Return количество уровней приближения
      */
     internal fun getLevelCount(fileName: String): Int {
-        val directory = File("$unzipPath/$locationName/$fileName")
+        val directory = File("$unzipPath$locationName/$fileName")
         val files = directory.listFiles()
         return files?.size ?: 0
+    }
+
+    /**
+     * Метод для проверки наличия локации в файлах устройства
+     * @Return true при наличии файла в памяти
+     * */
+    internal fun checkStorageLocation(): Boolean {
+        for (file in File(unzipPath).listFiles()!!) {
+            if (file.name == locationName) return true
+        }
+        Toast.makeText(context, "Локация не найдена", Toast.LENGTH_SHORT).show()
+        return false
     }
 }
