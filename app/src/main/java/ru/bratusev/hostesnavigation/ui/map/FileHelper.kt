@@ -102,9 +102,9 @@ class FileHelper(private val context: Context, val locationName: String) {
      * */
     private fun unzip(fileName: String): Boolean? {
         return try {
-            val zipFile = ZipFile("$dataPath$fileName.zip")
-            zipFile.extractAll(unzipPath)
-            File("$dataPath$fileName.zip").delete()
+            val zipFile = ZipFile("$dataPathTmp$fileName.zip")
+            zipFile.extractAll(unzipPathTmp)
+            File("$dataPathTmp$fileName.zip").delete()
             Toast.makeText(context, "Установка успешна", Toast.LENGTH_SHORT).show()
             true
         } catch (e: Exception) {
