@@ -9,6 +9,10 @@ package ru.bratusev.hostesnavigation.navigation
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.dotList
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.levelArray
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.mapHeight
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.mapWidth
 import kotlin.math.sqrt
 
 /**
@@ -18,24 +22,14 @@ import kotlin.math.sqrt
  */
 class Map {
     /**
-     * @Param [dots] список точек на графе
-     * @See [Dot]
-     * */
-    private val dots = ArrayList<Dot>()
-    /** @Param width ширина карты в пикселях*/
-    private var width = 0
-    /** @Param height длинна карты в пикселях*/
-    private var height = 0
-
-    /**
-     * Получает [dots], [width] и [height] из json строки
+     * Получает [dotList], [mapWidth] и [mapHeight] из json строки
      * @Param [json] - строка в формате json с графом
      */
     fun loadFromString(json: String) {
         val map = JSONTokener(json).nextValue() as JSONObject
         val jsonDots = map.getJSONArray("dots")
-        width = map.getInt("width")
-        height = map.getInt("height")
+        mapWidth = map.getInt("width")
+        mapHeight = map.getInt("height")
         var i = -1
         while (++i < jsonDots.length()) {
             val jsonDot = jsonDots.getJSONObject(i)
@@ -43,8 +37,12 @@ class Map {
             dot.setLevel(jsonDot.getInt("level"))
             dot.setId(jsonDot.getInt("id"))
             dot.setConnected(jsonDot.getJSONArray("connected"))
-            dots.add(dot)
+            if (!levelArray.contains(dot.getLevel().toString())) {
+                levelArray.add(dot.getLevel().toString())
+            }
+            dotList.add(dot)
         }
+        levelArray.sort()
     }
 
     /**
@@ -54,7 +52,7 @@ class Map {
      * @Return возвращает точку на графе
      */
     fun getDot(id: Int): Dot {
-        return dots[id]
+        return dotList[id]
     }
 
     /**
@@ -65,13 +63,13 @@ class Map {
      * @Return расстояние между точками
      */
     fun dist(dot1: Int, dot2: Int): Float {
-        if (dots.isEmpty()) return -1f
+        if (dotList.isEmpty()) return -1f
         if (dot1 < 0 || dot2 < 0) return -1f
-        if (dot1 > dots.size || dot2 > dots.size) return -1f
-        val dX1 = width * dots[dot1].getX()
-        val dX2 = width * dots[dot2].getX()
-        val dY1 = height * dots[dot1].getY()
-        val dY2 = height * dots[dot2].getY()
+        if (dot1 > dotList.size || dot2 > dotList.size) return -1f
+        val dX1 = mapWidth * dotList[dot1].getX()
+        val dX2 = mapWidth * dotList[dot2].getX()
+        val dY1 = mapHeight * dotList[dot1].getY()
+        val dY2 = mapHeight * dotList[dot2].getY()
 
         return sqrt((dX1 - dX2) * (dX1 - dX2) + (dY1 - dY2) * (dY1 - dY2))
     }
@@ -80,7 +78,7 @@ class Map {
      * Сбрасывает состояние точек к исходному из списка [dots]
      */
     fun clear() {
-        for (dot in dots) {
+        for (dot in dotList) {
             dot.setVisited(false)
             dot.setFromId(-1)
             dot.setG(0f)
@@ -119,7 +117,7 @@ class Map {
         }
 
         /** Возвращает значение [level] для текущей точки */
-        fun getLevel(): Int{
+        fun getLevel(): Int {
             return level
         }
 

@@ -6,25 +6,16 @@
  * */
 package ru.bratusev.hostesnavigation.ui.map
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.util.Log.i
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.OnClickListener
 import android.view.ViewGroup
-import android.widget.ImageButton
-import android.widget.NumberPicker
-import androidx.core.view.size
+import android.widget.ImageView
 import androidx.fragment.app.Fragment
-import org.json.JSONObject
-import org.json.JSONTokener
-import ovh.plrapps.mapview.MapView
 import ru.bratusev.hostesnavigation.R
-import ru.bratusev.hostesnavigation.navigation.Map
-import ru.bratusev.hostesnavigation.navigation.Navigation
+import java.io.File
 
 
 /**
@@ -39,9 +30,17 @@ class MapFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_map, container, false).also {
-            MapConnector(requireContext(), it as ViewGroup, "location1")
-            //fileHelper.fileDownload("1rq4aFmBEvLCAhXTQ3YPbtaHkoc2_8B8v")
+            val mapConnector = MapConnector(requireContext(), it as ViewGroup, "location1")
+            var i = 27
+            mapConnector.updatePath(i,15)
+            it.findViewById<ImageView>(R.id.btn_zoomIn).setOnClickListener {
+                i++
+                mapConnector.updatePath(i,15)
+            }
+
+
+            /*val fileHelper = FileHelper(requireContext(), "location1")
+            fileHelper.fileDownload("1rq4aFmBEvLCAhXTQ3YPbtaHkoc2_8B8v")*/
         }
     }
-
 }

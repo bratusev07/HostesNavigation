@@ -6,20 +6,18 @@
  * */
 package ru.bratusev.hostesnavigation.ui.map
 
-import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
-import android.os.Environment
 import android.util.Log
 import android.widget.Toast
-import androidx.core.content.ContextCompat.registerReceiver
 import net.lingala.zip4j.ZipFile
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.dataPath
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.unzipPath
 import java.io.File
-import java.io.FileNotFoundException
 
 /**
  * Класс для работы с файловой системой
@@ -30,25 +28,18 @@ import java.io.FileNotFoundException
 class FileHelper(private val context: Context, val locationName: String) {
 
     /**
-     * @Param [SDPath] путь к файлам проекта
-     * @Param [dataPath] путь для скачивания архива
-     * @Param [unzipPath] путь для разархивации
-     * */
-    @SuppressLint("SdCardPath")
-    private val SDPath =
-        Environment.getExternalStorageDirectory().absolutePath + "/Android/data/ru.bratusev.hostesnavigation"
-    private var dataPath = "$SDPath/files/locations/"
-    private var unzipPath = "$SDPath/files/locations/"
-
-    /**
      * Скачивает архив с тайлами и графом навигации
      * @Param [uRl] идентификатор документа для скачивания
      * @See [FileHelper.convertUrl] метод для дополнения ссылки
      * @See [FileHelper.onComplete] ресивер для обработки конца загрузки
      */
+
+    private var dataPathTmp = dataPath
+    private var unzipPathTmp = unzipPath
+
     internal fun fileDownload(uRl: String) {
-        dataPath += "$locationName/"
-        unzipPath += "$locationName/"
+        dataPathTmp += "$locationName/"
+        unzipPathTmp += "$locationName/"
         val request = DownloadManager.Request(Uri.parse(convertUrl(uRl)))
             .setTitle("$locationName.zip")
             .setDescription("Downloading")
@@ -137,7 +128,7 @@ class FileHelper(private val context: Context, val locationName: String) {
      * Метод для проверки наличия локации в файлах устройства
      * @Return true при наличии файла в памяти
      * */
-    internal fun checkStorageLocation(): Boolean {
+    private fun checkStorageLocation(): Boolean {
         for (file in File(unzipPath).listFiles()!!) {
             if (file.name == locationName) return true
         }

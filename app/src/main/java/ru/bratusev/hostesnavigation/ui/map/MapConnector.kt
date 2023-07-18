@@ -2,21 +2,22 @@ package ru.bratusev.hostesnavigation.ui.map
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.SharedPreferences
 import android.util.Log
 import android.view.View
 import android.view.View.OnClickListener
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.NumberPicker
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.view.size
-import org.json.JSONObject
-import org.json.JSONTokener
 import ovh.plrapps.mapview.MapView
 import ru.bratusev.hostesnavigation.R
-import ru.bratusev.hostesnavigation.navigation.Map
 import ru.bratusev.hostesnavigation.navigation.Navigation
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.dotList
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.finishNode
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.levelArray
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.levelNumber
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.startNode
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.zoomLevelCount
 
 class MapConnector(
     private val context: Context,
@@ -33,22 +34,10 @@ class MapConnector(
     private var navigation: Navigation = Navigation()
 
     /**
-     * @Param [dotList] массив точек на карте
-     * @See [Map.Dot]
-     * @Param [width] реальная ширина карты
-     * @Param [height] реальная высота карты
-     * @Param [levelCount] количество уровней приближения
-     * @Param [locationName] название подгружаемой локации
      * @Param [fileHelper] класс для работы с файловой системой
      * @See [FileHelper]
-     * @Param [levelArray] массив этажей в здании
      * */
-    private var dotList: ArrayList<Map.Dot> = ArrayList()
-    private var width = 0
-    private var height = 0
-    private var levelCount = 0
     private var fileHelper = FileHelper(context, locationName)
-    private val levelArray = ArrayList<String>()
 
     init {
         val json = fileHelper.getJsonMap(locationName)
@@ -58,11 +47,9 @@ class MapConnector(
         }
     }
 
-
     /**
      * Метод для настройки view выбора этажа
      * @Param [levelPicker] view для выбора номера этажа
-     *
      * @See [MapFragment.initPickerWithString]
      * */
     private fun configureLevelPicker(levelPicker: NumberPicker) {
@@ -115,52 +102,27 @@ class MapConnector(
      * @See [MapHelper]
      * @Param [mapView] view для настройки
      * @Param [scale] уровень приближения карты
-     * @Param [rotation] угол поворота карты
-     * @Param [level] номер отображаемого на карте этажа
      * */
     private fun configureMapView(
         mapView: MapView,
-        scale: Float = 0f,
-        rotation: Float = 0f,
-        level: Int = 1
+        scale: Float = 0f
     ) {
         mapHelper =
-            MapHelper(context, mapView, level, levelCount, locationName, width, height, navigation)
-        mapHelper.rotation = rotation
+            MapHelper(context, mapView, locationName, navigation)
         mapHelper.setScale(scale)
         mapHelper.addAllMarkers(dotList)
-        mapHelper.addPositionMarker(dotList[0].getX().toDouble(), dotList[0].getY().toDouble())
         mapHelper.addReferentialListener()
         mapHelper.addMarkerClickListener()
-        putData(0, 136)
-        mapHelper.updatePath()
     }
 
     /**
-     * Получает [dots], [width], [height] и [levelCount] из json строки
+     * Получает [dotList], [mapWidth], [mapHeight] и [zoomLevelCount] из json строки
      * @Param [json] - строка в формате json с графом
+     * @See [Map]
      */
     private fun loadFromString(json: String) {
-        levelCount = fileHelper.getLevelCount("tiles1") - 1
+        zoomLevelCount = fileHelper.getLevelCount("tiles1") - 1
         navigation.loadMapFromJson(json)
-        val map = JSONTokener(json).nextValue() as JSONObject
-        val jsonDots = map.getJSONArray("dots")
-        width = map.getInt("width")
-        height = map.getInt("height")
-        var i = -1
-        while (++i < jsonDots.length()) {
-            val jsonDot = jsonDots.getJSONObject(i)
-            val dot = Map.Dot(jsonDot.getDouble("x").toFloat(), jsonDot.getDouble("y").toFloat())
-            dot.setId(jsonDot.getInt("id"))
-            dot.setConnected(jsonDot.getJSONArray("connected"))
-            dot.setLevel(jsonDot.getInt("level"))
-            if (!levelArray.contains(dot.getLevel().toString())) {
-                levelArray.add(dot.getLevel().toString())
-            }
-            dotList.add(dot)
-        }
-        levelArray.sort()
-        Log.d("LevelArray", levelArray.toString())
     }
 
     /**
@@ -171,19 +133,21 @@ class MapConnector(
     @SuppressLint("ResourceAsColor", "SoonBlockedPrivateApi")
     override fun onValueChange(picker: NumberPicker?, oldVal: Int, newVal: Int) {
         try {
-            val level = levelArray[picker?.value!! - 1].toInt()
+            levelNumber = levelArray[picker?.value!! - 1].toInt()
             if (oldVal != newVal) {
                 updateViews()
                 configureViews(parentView, false)
-                val scale = mapHelper.getScale()
-                val rotation = mapHelper.rotation
-                configureMapView(mapView, scale, rotation, level)
+                configureMapView(mapView, mapHelper.getScale())
+                mapHelper.updatePath()
             }
         } catch (e: Exception) {
             Log.d("MyLog", e.message.toString())
         }
     }
 
+    /**
+     * Метод для пересоздания всех view на экране
+     * */
     private fun updateViews() {
         parentView.removeAllViewsInLayout()
         mapView = MapView(context)
@@ -193,18 +157,23 @@ class MapConnector(
         parentView.addView(zoomOut)
     }
 
-    private fun putData(start: Int, finish: Int) {
-        val sharedPref: SharedPreferences =
-            context.getSharedPreferences("path", Context.MODE_PRIVATE)
-        val editor: SharedPreferences.Editor = sharedPref.edit()
-        editor.putInt("start", start)
-        editor.putInt("finish", finish)
-        editor.apply()
+    /**
+     * Метод для построения маршрута
+     * @Param [start] идентификатор точки начала маршрута
+     * @Param [finish] идентификатор точки конца маршрута
+     * */
+    internal fun updatePath(start: Int, finish: Int) {
+        startNode = start
+        finishNode = finish
+        mapHelper.updatePath()
     }
 
+    /**
+     * Обработчки нажатий на кнопки приближения и отдаления карты
+     * */
     override fun onClick(v: View?) {
         when (v?.id) {
-            R.id.btn_zoomIn -> mapHelper.zoomIn()
+            //R.id.btn_zoomIn -> mapHelper.zoomIn()
             R.id.btn_zoomOut -> mapHelper.zoomOut()
         }
     }

@@ -8,15 +8,12 @@ package ru.bratusev.hostesnavigation.ui.map
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Interpolator
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
-import android.os.Environment
 import android.util.Log
 import android.view.View
 import androidx.appcompat.widget.AppCompatImageView
@@ -27,6 +24,7 @@ import ovh.plrapps.mapview.ReferentialData
 import ovh.plrapps.mapview.ReferentialListener
 import ovh.plrapps.mapview.api.addCallout
 import ovh.plrapps.mapview.api.addMarker
+import ovh.plrapps.mapview.api.removeMarker
 import ovh.plrapps.mapview.api.setMarkerTapListener
 import ovh.plrapps.mapview.core.TileStreamProvider
 import ovh.plrapps.mapview.markers.MarkerTapListener
@@ -37,41 +35,36 @@ import ovh.plrapps.mapview.util.AngleDegree
 import ru.bratusev.hostesnavigation.R
 import ru.bratusev.hostesnavigation.navigation.Map
 import ru.bratusev.hostesnavigation.navigation.Navigation
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.finishNode
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.levelNumber
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.mapHeight
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.mapWidth
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.markerList
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.maxPathWidth
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.maxScale
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.minPathWidth
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.minScale
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.startNode
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.unzipPath
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.zoomLevelCount
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
+import kotlin.math.atan
 
 /**
  * @Constructor Create empty Map helper
  * @Param [context] контекст для работы с ресурсами
  * @Param [mapView] MapView для конфигурации карты
- * @Param [tileLevel] номер отображаемого этажа
- * @Param [levelCount] количество уровней приближения
  * @Param [locationName] название локации
- * @Param [mapWidth] полная ширина карты в пикселях
- * @Param [mapHeight] полная высота карты в пикселях
  * @Param [navigation] навигатор для поиска маршрута
  */
 class MapHelper(
     private val context: Context,
     private val mapView: MapView,
-    private val tileLevel: Int,
-    private val levelCount: Int,
     private val locationName: String,
-    private val mapWidth: Int,
-    private val mapHeight: Int,
     private val navigation: Navigation
 ) : TileStreamProvider {
-
-    /**@Param [SDPath] – путь к файлам приложения */
-    private val SDPath =
-        Environment.getExternalStorageDirectory().absolutePath + "/Android/data/ru.bratusev.hostesnavigation"
-
-    /** @Param [unzipPath] – путь к файлам локации */
-    private var unzipPath = "$SDPath/files/locations/"
-
-    /** @Param [markerList] – массив меток для карты */
-    private val markerList = ArrayList<MapMarker>()
 
     /** @Param [finishMarker] – маркер конца маршрута на карте */
     private val finishMarker = AppCompatImageView(context).apply {
@@ -89,33 +82,21 @@ class MapHelper(
     /** @Param [newScale] – текущее приблежение карты */
     private var newScale = 0f
 
-    /** @Param [widthMax] – максимальная ширина отображаемого маршрута */
-    private var widthMax = 50f
-
-    /** @Param [widthMin] – минимальная ширина отображаемого маршрута */
-    private var widthMin = 10f
-
-    /** @Param [maxScale] – максимальное приближение карты */
-    private var maxScale = 2f
-
-    /** @Param [minScale] – минимальное приближение карты */
-    private var minScale = 0f
-
-    /** @Param [rotation] – угол поворота карты */
-    internal var rotation = 0F
-
-    /** @Param [isPathSet] – флаг отображения маршрута */
+    /**
+     * @Param [isPathSet] – флаг отображения маршрута
+     * @Param [isFinishSet] – флаг отображения метки конца маршрута
+     * */
     private var isPathSet = false
-
-    /** @Param [isFinishSet] – флаг отображения метки конца маршрута */
     private var isFinishSet = false
+    private var isPositionSet = false
 
     /**
      * Метод для первичной настройки MapView
      * @See [MapHelper.generateConfig]
      * */
     init {
-        mapView.configure(generateConfig(levelCount, mapWidth, mapHeight))
+        markerList.clear()
+        mapView.configure(generateConfig(zoomLevelCount, mapWidth, mapHeight))
         mapView.defineBounds(0.0, 0.0, mapWidth.toDouble(), mapHeight.toDouble())
     }
 
@@ -125,8 +106,8 @@ class MapHelper(
      * @Param [y] - Y координата маркера на карте
      */
     internal fun addPositionMarker(x: Double, y: Double) {
-        val level = if (getStart() > 134) 2 else 1
-        if (level == tileLevel) mapView.addMarker(positionMarker, x, y, -0.5f, -0.5f)
+        val level = if (startNode > 134) 2 else 1
+        if (level == levelNumber) mapView.addMarker(positionMarker, x, y, -0.5f, -0.5f)
     }
 
     /**
@@ -152,8 +133,32 @@ class MapHelper(
                 break
             }
         }
-        isFinishSet = true
+        try {
+            mapView.removeMarker(finishMarker)
+        } catch (e: Exception) {
+        }
         mapView.addMarker(finishMarker, x, y, -0.5f, -0.5f)
+    }
+
+    /**
+     * Функция установки метки текущего положения
+     * @Param [id] - уникальный идентификатор точки на графе
+     * */
+    private fun addPositionMarker(id: String) {
+        var x = 0.0
+        var y = 0.0
+        for (marker in markerList) {
+            if (marker.name == id) {
+                x = marker.x
+                y = marker.y
+                break
+            }
+        }
+        try {
+            mapView.removeMarker(positionMarker)
+        } catch (e: Exception) {
+        }
+        mapView.addMarker(positionMarker, x, y, -0.5f, -0.5f)
     }
 
     /**
@@ -176,7 +181,8 @@ class MapHelper(
         }
         marker.rotation = angel
         markerList.add(marker)
-        if (tileLevel == level) mapView.addMarker(marker, x, y)
+        Log.d("MarkerLog", "${marker.name} $levelNumber $level")
+        if (levelNumber == level) mapView.addMarker(marker, x, y)
     }
 
     /**
@@ -225,13 +231,15 @@ class MapHelper(
      * @Param [fullHeight] - фактическая высота карты
      * */
     private fun generateConfig(
-        levelCount: Int = 5,
-        fullWidth: Int = 3840,
-        fullHeight: Int = 2160
+        levelCount: Int,
+        fullWidth: Int,
+        fullHeight: Int
     ): MapViewConfiguration {
         pathView = PathView(context)
-        return MapViewConfiguration(levelCount, fullWidth, fullHeight, 256, this).setMaxScale(2f)
-            .enableRotation().setStartScale(0f)
+        return MapViewConfiguration(levelCount, fullWidth, fullHeight, 256, this).setMaxScale(
+            maxScale
+        )
+            .enableRotation().setStartScale(minScale)
     }
 
     /**
@@ -242,12 +250,12 @@ class MapHelper(
             FileInputStream(
                 File(
                     "$unzipPath/$locationName/",
-                    "tiles$tileLevel/$zoomLvl/$row/$col.jpg"
+                    "tiles$levelNumber/$zoomLvl/$row/$col.jpg"
                 )
             )
         } catch (e: Exception) {
             Log.d("MyLog", e.message.toString() + e.stackTraceToString())
-            FileInputStream(File("$unzipPath/$locationName/", "tiles$tileLevel/blank.png"))
+            FileInputStream(File("$unzipPath/$locationName/", "tiles$levelNumber/blank.png"))
         }
     }
 
@@ -288,6 +296,8 @@ class MapHelper(
     private fun setMarkerScale(scale: Float) {
         positionMarker.scaleX = scale + 1f
         positionMarker.scaleY = scale + 1f
+        finishMarker.scaleX = scale + 1f
+        finishMarker.scaleY = scale + 1f
     }
 
     /**
@@ -378,16 +388,30 @@ class MapHelper(
      * @See [Navigation]
      */
     internal fun updatePath() {
-        var myStart = getStart()
-        var myFinish = getFinish()
-        if (tileLevel == 2) myStart = 135
-        else myFinish = 33
-        Log.d("MyPath", "$myStart $myFinish")
+        var myStart = startNode
+        var myFinish = finishNode
+        if(levelNumber == 1){
+            if(finishNode > 134) myFinish = 33
+            else addFinishMarker(myFinish.toString())
+            if(startNode < 135) addPositionMarker(myStart.toString())
+            else myStart = 33
+        }else {
+            if(finishNode < 135) myFinish = 135
+            else addFinishMarker(myFinish.toString())
+            if(startNode > 134) addPositionMarker(myStart.toString())
+            else myStart = 135
+        }
         val myPath = navigation.path(myStart, myFinish)
-        var temp = widthMin + (widthMax - widthMin) * newScale / maxScale
-        if (newScale == minScale) temp = widthMin
-        else if (newScale == maxScale) temp = widthMax
-
+        if(myPath?.size!! > 3){
+            val x1 = myPath[0].toInt()
+            val y1 = myPath[1].toInt()
+            val x2 = myPath[2].toInt()
+            val y2 = myPath[3].toInt()
+            positionMarker.rotation += calculateAngel(x1,y1,x2,y2)
+        }
+        var temp = minPathWidth + (maxPathWidth - minPathWidth) * newScale / maxScale
+        if (newScale == minScale) temp = minPathWidth
+        else if (newScale == maxScale) temp = maxPathWidth
         val drawablePath = object : PathView.DrawablePath {
             override val visible: Boolean = true
             override var path: FloatArray = myPath as FloatArray
@@ -396,8 +420,23 @@ class MapHelper(
         }
 
         pathView.updatePaths(listOf(drawablePath))
-        if (!isFinishSet && myFinish == getFinish()) addFinishMarker(myFinish.toString())
+        if (!isFinishSet && myFinish == finishNode) addFinishMarker(myFinish.toString())
         if (!isPathSet) addPathView()
+    }
+
+    /**
+     * Метод для подсчёта угла поворота маркера положения пользователя
+     * @Param [x1] X координата пользователя
+     * @Param [y1] Y координата пользователя
+     * @Param [x2] X координата следующей точки по маршруту
+     * @Param [y2] Y координата следующей точки по маршруту
+     * */
+    private fun calculateAngel(x1: Int, y1: Int, x2: Int, y2: Int): Float {
+        var angel = 90.0f
+        val tmp = (atan(((y2-y1).toDouble()/(x2-x1).toDouble()))*180/Math.PI).toFloat()
+        angel += if(x2-x1 >= 0) tmp
+        else tmp+180
+        return angel
     }
 
     /**
@@ -421,30 +460,10 @@ class MapHelper(
     }
 
     /**
-     * Метод для получения идентификатора точки начала маршрута из Prefernce
-     * @Return идентификатор точки начала
-     * */
-    private fun getStart(): Int {
-        val sharedPref: SharedPreferences =
-            context.getSharedPreferences("path", Context.MODE_PRIVATE)
-        return sharedPref.getInt("start", 0)
-    }
-
-    /**
-     * Метод для получения идентификатора точки конца маршрута из Prefernce
-     * @Return идентификатор точки конца
-     * */
-    private fun getFinish(): Int {
-        val sharedPref: SharedPreferences =
-            context.getSharedPreferences("path", Context.MODE_PRIVATE)
-        return sharedPref.getInt("finish", 0)
-    }
-
-    /**
      * Метод для увеличения карты кнопкой
      */
     internal fun zoomIn() {
-        newScale += (maxScale - minScale) / levelCount
+        newScale += (maxScale - minScale) / zoomLevelCount
         if (newScale > maxScale) newScale = maxScale
         mapView.smoothScaleFromFocalPoint(mapView.offsetX, mapView.offsetY, newScale)
     }
@@ -453,7 +472,7 @@ class MapHelper(
      * Метод для уменьшения карты кнопкой
      */
     internal fun zoomOut() {
-        newScale -= (maxScale - minScale) / levelCount
+        newScale -= (maxScale - minScale) / zoomLevelCount
         if (newScale < minScale) newScale = minScale
         mapView.smoothScaleFromFocalPoint(mapView.offsetX, mapView.offsetY, newScale)
     }
