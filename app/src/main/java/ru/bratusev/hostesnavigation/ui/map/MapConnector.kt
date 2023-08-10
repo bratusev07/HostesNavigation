@@ -173,7 +173,7 @@ class MapConnector(
      * */
     override fun onClick(v: View?) {
         when (v?.id) {
-            //R.id.btn_zoomIn -> mapHelper.zoomIn()
+            R.id.btn_zoomIn -> mapHelper.zoomIn()
             R.id.btn_zoomOut -> mapHelper.zoomOut()
         }
     }

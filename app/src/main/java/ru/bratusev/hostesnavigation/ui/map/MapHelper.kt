@@ -465,7 +465,7 @@ class MapHelper(
     internal fun zoomIn() {
         newScale += (maxScale - minScale) / zoomLevelCount
         if (newScale > maxScale) newScale = maxScale
-        mapView.smoothScaleFromFocalPoint(mapView.offsetX, mapView.offsetY, newScale)
+        mapView.smoothScaleFromFocalPoint(mapView.width/2, mapView.height/2, newScale)
     }
 
     /**
@@ -474,6 +474,6 @@ class MapHelper(
     internal fun zoomOut() {
         newScale -= (maxScale - minScale) / zoomLevelCount
         if (newScale < minScale) newScale = minScale
-        mapView.smoothScaleFromFocalPoint(mapView.offsetX, mapView.offsetY, newScale)
+        mapView.smoothScaleFromFocalPoint(mapView.width/2, mapView.height/2, newScale)
     }
 }
