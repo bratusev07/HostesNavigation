@@ -64,7 +64,9 @@ class FileHelper(private val context: Context, val locationName: String) {
      * */
     private val onComplete = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            unzip(locationName)
+            if(unzip(locationName) == true){
+
+            }
         }
     }
 

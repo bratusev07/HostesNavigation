@@ -28,13 +28,19 @@ class Map {
     fun loadFromString(json: String) {
         val map = JSONTokener(json).nextValue() as JSONObject
         val jsonDots = map.getJSONArray("dots")
+        val locationId = map.getInt("locationId")
         mapWidth = map.getInt("width")
         mapHeight = map.getInt("height")
         var i = -1
         while (++i < jsonDots.length()) {
             val jsonDot = jsonDots.getJSONObject(i)
             val dot = Dot(jsonDot.getDouble("x").toFloat(), jsonDot.getDouble("y").toFloat())
-            dot.setLevel(jsonDot.getInt("level"))
+            dot.setLevel(jsonDot.getInt("floor"))
+            dot.setMac(jsonDot.getString("mac"))
+            dot.setName(jsonDot.getString("name"))
+            dot.setDescription(jsonDot.getString("description"))
+            dot.setType(jsonDot.getString("type"))
+            dot.setPhotos(jsonDot.getJSONArray("photoUrls"))
             dot.setId(jsonDot.getInt("id"))
             dot.setConnected(jsonDot.getJSONArray("connected"))
             if (!levelArray.contains(dot.getLevel().toString())) {
@@ -104,12 +110,17 @@ class Map {
          * @Param [nei] массив идентификаторов соседних точек для данной
          * */
         private var id = 0
+        private var mac = "00:00:00:00"
+        private var name = " "
+        private var description = " "
+        private var type = " "
         private var g = 0f
         private var h = 0f
         private var visited = false
         private var level = 1
         private var fromId = -1
         private var nei = ArrayList<Int>()
+        private var photoUrls = ArrayList<String>()
 
         /** Устанавливает [level] для текущей точки */
         fun setLevel(level: Int) {
@@ -119,6 +130,38 @@ class Map {
         /** Возвращает значение [level] для текущей точки */
         fun getLevel(): Int {
             return level
+        }
+
+        fun setName(name: String){
+            this.name = name
+        }
+
+        fun getName() : String{
+            return name
+        }
+
+        fun setDescription(desc: String){
+            this.description = desc
+        }
+
+        fun getDescription() : String{
+            return description
+        }
+
+        fun setMac(mac: String){
+            this.mac = mac
+        }
+
+        fun getMac() : String{
+            return mac
+        }
+
+        fun setType(type: String){
+            this.type = type
+        }
+
+        fun getType() : String{
+            return type
         }
 
         /** Устанавливает [g] для текущей точки */
@@ -192,6 +235,17 @@ class Map {
         /** Возвращает значение [nei] для текущей точки */
         fun getConnected(): ArrayList<Int> {
             return nei
+        }
+
+        fun setPhotos(photos: JSONArray) {
+            var i = -1
+            while (++i < photos.length()) {
+                this.photoUrls.add(photos.getString(i));
+            }
+        }
+
+        fun getPhotos() : ArrayList<String>{
+            return photoUrls
         }
     }
 }

@@ -154,15 +154,15 @@ class MapHelper(
         x: Double,
         y: Double,
         level: Int,
+        id: String,
         name: String,
         angel: Float = 0f
     ) {
-        val marker = MapMarker(context, x, y, name).apply {
+        val marker = MapMarker(context, x, y, id).apply {
             setImageDrawable(BitmapDrawable(resources, drawText("$name ")))
         }
         marker.rotation = angel
         markerList.add(marker)
-        Log.d("MarkerLog", "${marker.name} $levelNumber $level")
         if (levelNumber == level) mapView.addMarker(marker, x, y)
     }
 
@@ -378,7 +378,10 @@ class MapHelper(
         var myMarker = Map.Dot(0f, 0f)
         var myFinishMarker = Map.Dot(0f, 0f)
         for (marker in dotList) {
-            if (marker.getId() == startNode) myMarker = marker
+            if (marker.getId() == startNode) {
+                myMarker = marker
+                Log.d("MyLog", "${marker.getId()} == $startNode")
+            }
             if (marker.getId() == finishNode) myFinishMarker = marker
         }
         if (levelNumber == myMarker.getLevel()) positionMarker.visibility = View.VISIBLE
@@ -425,7 +428,8 @@ class MapHelper(
                     dot.getX().toDouble(),
                     dot.getY().toDouble(),
                     dot.getLevel(),
-                    dot.getId().toString()
+                    dot.getId().toString(),
+                    dot.getName()
                 )
             }
         } catch (e: Exception) {

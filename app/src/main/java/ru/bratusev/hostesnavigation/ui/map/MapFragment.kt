@@ -29,9 +29,9 @@ class MapFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_map, container, false).also {
-            //val fileHelper = FileHelper(requireContext(), "location1")
-            //fileHelper.fileDownload("1rq4aFmBEvLCAhXTQ3YPbtaHkoc2_8B8v")
-            val mapConnector = MapConnector(requireContext(), it as ViewGroup, "location1")
+            /*val fileHelper = FileHelper(requireContext(), "location1")
+            fileHelper.fileDownload("1rq4aFmBEvLCAhXTQ3YPbtaHkoc2_8B8v")*/
+            val mapConnector = MapConnector(requireContext(), it as ViewGroup, "Korpus_G")
             it.findViewById<ImageButton>(R.id.btn_zoomIn).setOnClickListener {
                 startNode++
                 mapConnector.updatePath(136)
