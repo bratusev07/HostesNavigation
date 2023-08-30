@@ -113,6 +113,8 @@ class MapConnector(
         mapHelper.addAllMarkers(dotList)
         mapHelper.addReferentialListener()
         mapHelper.addMarkerClickListener()
+        mapHelper.addPositionMarker(startNode.toString(), 0f)
+        mapHelper.addFinishMarker(finishNode.toString())
     }
 
     /**
@@ -159,13 +161,12 @@ class MapConnector(
 
     /**
      * Метод для построения маршрута
-     * @Param [start] идентификатор точки начала маршрута
      * @Param [finish] идентификатор точки конца маршрута
      * */
-    internal fun updatePath(start: Int, finish: Int) {
-        startNode = start
+    internal fun updatePath(finish: Int) {
         finishNode = finish
         mapHelper.updatePath()
+        mapHelper.movePosition(startNode.toString())
     }
 
     /**

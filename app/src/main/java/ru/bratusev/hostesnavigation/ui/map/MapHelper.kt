@@ -24,17 +24,18 @@ import ovh.plrapps.mapview.ReferentialData
 import ovh.plrapps.mapview.ReferentialListener
 import ovh.plrapps.mapview.api.addCallout
 import ovh.plrapps.mapview.api.addMarker
+import ovh.plrapps.mapview.api.moveMarker
+import ovh.plrapps.mapview.api.moveToMarker
 import ovh.plrapps.mapview.api.removeMarker
 import ovh.plrapps.mapview.api.setMarkerTapListener
 import ovh.plrapps.mapview.core.TileStreamProvider
 import ovh.plrapps.mapview.markers.MarkerTapListener
 import ovh.plrapps.mapview.paths.PathView
 import ovh.plrapps.mapview.paths.addPathView
-import ovh.plrapps.mapview.paths.removePathView
-import ovh.plrapps.mapview.util.AngleDegree
 import ru.bratusev.hostesnavigation.R
 import ru.bratusev.hostesnavigation.navigation.Map
 import ru.bratusev.hostesnavigation.navigation.Navigation
+import ru.bratusev.hostesnavigation.ui.map.MapConstants.dotList
 import ru.bratusev.hostesnavigation.ui.map.MapConstants.finishNode
 import ru.bratusev.hostesnavigation.ui.map.MapConstants.levelNumber
 import ru.bratusev.hostesnavigation.ui.map.MapConstants.mapHeight
@@ -82,13 +83,9 @@ class MapHelper(
     /** @Param [newScale] – текущее приблежение карты */
     private var newScale = 0f
 
-    /**
-     * @Param [isPathSet] – флаг отображения маршрута
-     * @Param [isFinishSet] – флаг отображения метки конца маршрута
-     * */
     private var isPathSet = false
-    private var isFinishSet = false
-    private var isPositionSet = false
+
+    private var positionRotation = 0f
 
     /**
      * Метод для первичной настройки MapView
@@ -101,29 +98,10 @@ class MapHelper(
     }
 
     /**
-     * Добавляет на карту маркер с текущим положением пользователя
-     * @Param [x] - X координата маркера на карте
-     * @Param [y] - Y координата маркера на карте
-     */
-    internal fun addPositionMarker(x: Double, y: Double) {
-        val level = if (startNode > 134) 2 else 1
-        if (level == levelNumber) mapView.addMarker(positionMarker, x, y, -0.5f, -0.5f)
-    }
-
-    /**
-     * Добавляет на карту маркер конца маршрута
-     * @Param [x] - X координата маркера на карте
-     * @Param [y] - Y координата маркера на карте
-     */
-    internal fun addFinishMarker(x: Double, y: Double) {
-        mapView.addMarker(finishMarker, x, y, -0.5f, -0.5f)
-    }
-
-    /**
      * Функция установки метки конца маршрута
      * @Param [id] - уникальный идентификатор точки на графе
      * */
-    private fun addFinishMarker(id: String) {
+    internal fun addFinishMarker(id: String) {
         var x = 0.0
         var y = 0.0
         for (marker in markerList) {
@@ -137,6 +115,7 @@ class MapHelper(
             mapView.removeMarker(finishMarker)
         } catch (e: Exception) {
         }
+        finishMarker.visibility = View.INVISIBLE
         mapView.addMarker(finishMarker, x, y, -0.5f, -0.5f)
     }
 
@@ -144,7 +123,7 @@ class MapHelper(
      * Функция установки метки текущего положения
      * @Param [id] - уникальный идентификатор точки на графе
      * */
-    private fun addPositionMarker(id: String) {
+    internal fun addPositionMarker(id: String, angel: Float = 0f) {
         var x = 0.0
         var y = 0.0
         for (marker in markerList) {
@@ -158,6 +137,8 @@ class MapHelper(
             mapView.removeMarker(positionMarker)
         } catch (e: Exception) {
         }
+        positionMarker.rotation = angel
+        positionMarker.visibility = View.INVISIBLE
         mapView.addMarker(positionMarker, x, y, -0.5f, -0.5f)
     }
 
@@ -266,26 +247,14 @@ class MapHelper(
         var referentialData: ReferentialData? = null
 
         override fun onReferentialChanged(refData: ReferentialData) {
-            angleDegree = refData.angle
             setMarkerScale(refData.scale)
+            setPositionMarkerRotation(refData.angle)
             referentialData = refData
             for (mapMarker in markerList) {
                 setMarkerScale(refData.scale, mapMarker)
             }
             newScale = refData.scale
-            rotateMaker()
             updatePath()
-        }
-
-        var angleDegree: AngleDegree = 0f
-            set(value) {
-                field = value
-                rotateMaker()
-            }
-
-        private fun rotateMaker() {
-            val refData = referentialData ?: return
-            positionMarker.rotation = angleDegree
         }
     }
 
@@ -298,6 +267,10 @@ class MapHelper(
         positionMarker.scaleY = scale + 1f
         finishMarker.scaleX = scale + 1f
         finishMarker.scaleY = scale + 1f
+    }
+
+    private fun setPositionMarkerRotation(angle: Float) {
+        positionMarker.rotation = angle + positionRotation
     }
 
     /**
@@ -331,14 +304,6 @@ class MapHelper(
     private fun addPathView() {
         isPathSet = true
         mapView.addPathView(pathView)
-    }
-
-    /**
-     * Метод для удаления маршрута с карты [mapView]
-     */
-    internal fun deletePaths() {
-        mapView.removePathView(pathView)
-        pathView = PathView(context)
     }
 
     /**
@@ -383,32 +348,42 @@ class MapHelper(
         strokeCap = Paint.Cap.ROUND
     }
 
+    internal fun movePosition(id: String) {
+        var x = 0.0
+        var y = 0.0
+        for (marker in markerList) {
+            if (marker.name == id) {
+                x = marker.x
+                y = marker.y
+                break
+            }
+        }
+        mapView.moveMarker(positionMarker, x, y)
+        setPositionMarkerRotation(0f)
+    }
+
     /**
      * Метод для построения маршрута на карте
      * @See [Navigation]
      */
     internal fun updatePath() {
-        var myStart = startNode
-        var myFinish = finishNode
-        if(levelNumber == 1){
-            if(finishNode > 134) myFinish = 33
-            else addFinishMarker(myFinish.toString())
-            if(startNode < 135) addPositionMarker(myStart.toString())
-            else myStart = 33
-        }else {
-            if(finishNode < 135) myFinish = 135
-            else addFinishMarker(myFinish.toString())
-            if(startNode > 134) addPositionMarker(myStart.toString())
-            else myStart = 135
-        }
-        val myPath = navigation.path(myStart, myFinish)
-        if(myPath?.size!! > 3){
+        val myPath = navigation.path(startNode, finishNode, levelNumber)
+        if (myPath?.size!! > 3) {
             val x1 = myPath[0].toInt()
             val y1 = myPath[1].toInt()
             val x2 = myPath[2].toInt()
             val y2 = myPath[3].toInt()
-            positionMarker.rotation += calculateAngel(x1,y1,x2,y2)
+            positionRotation = calculateAngel(x1, y1, x2, y2)
         }
+        var myMarker = Map.Dot(0f, 0f)
+        var myFinishMarker = Map.Dot(0f, 0f)
+        for (marker in dotList) {
+            if (marker.getId() == startNode) myMarker = marker
+            if (marker.getId() == finishNode) myFinishMarker = marker
+        }
+        if (levelNumber == myMarker.getLevel()) positionMarker.visibility = View.VISIBLE
+        if (levelNumber == myFinishMarker.getLevel()) finishMarker.visibility = View.VISIBLE
+
         var temp = minPathWidth + (maxPathWidth - minPathWidth) * newScale / maxScale
         if (newScale == minScale) temp = minPathWidth
         else if (newScale == maxScale) temp = maxPathWidth
@@ -420,7 +395,6 @@ class MapHelper(
         }
 
         pathView.updatePaths(listOf(drawablePath))
-        if (!isFinishSet && myFinish == finishNode) addFinishMarker(myFinish.toString())
         if (!isPathSet) addPathView()
     }
 
@@ -433,9 +407,9 @@ class MapHelper(
      * */
     private fun calculateAngel(x1: Int, y1: Int, x2: Int, y2: Int): Float {
         var angel = 90.0f
-        val tmp = (atan(((y2-y1).toDouble()/(x2-x1).toDouble()))*180/Math.PI).toFloat()
-        angel += if(x2-x1 >= 0) tmp
-        else tmp+180
+        val tmp = (atan(((y2 - y1).toDouble() / (x2 - x1).toDouble())) * 180 / Math.PI).toFloat()
+        angel += if (x2 - x1 >= 0) tmp
+        else tmp + 180
         return angel
     }
 
@@ -465,7 +439,7 @@ class MapHelper(
     internal fun zoomIn() {
         newScale += (maxScale - minScale) / zoomLevelCount
         if (newScale > maxScale) newScale = maxScale
-        mapView.smoothScaleFromFocalPoint(mapView.width/2, mapView.height/2, newScale)
+        mapView.smoothScaleFromFocalPoint(mapView.width / 2, mapView.height / 2, newScale)
     }
 
     /**
@@ -474,6 +448,15 @@ class MapHelper(
     internal fun zoomOut() {
         newScale -= (maxScale - minScale) / zoomLevelCount
         if (newScale < minScale) newScale = minScale
-        mapView.smoothScaleFromFocalPoint(mapView.width/2, mapView.height/2, newScale)
+        mapView.smoothScaleFromFocalPoint(mapView.width / 2, mapView.height / 2, newScale)
+        moveToMe()
+    }
+
+    internal fun moveToMe(){
+        mapView.scale = 1.3f
+        newScale = 1.3f
+        try {
+            mapView.moveToMarker(positionMarker, true)
+        }catch (e: Exception){}
     }
 }

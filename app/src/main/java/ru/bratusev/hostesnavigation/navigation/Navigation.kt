@@ -6,6 +6,7 @@
  * */
 package ru.bratusev.hostesnavigation.navigation
 
+import android.util.Log
 import kotlin.math.sqrt
 
 /**
@@ -61,7 +62,7 @@ class Navigation {
      * @Param finish идентификатор точки конца маршрута
      * @Return массив координат точек маршрута
      */
-    fun path(start: Int, finish: Int): FloatArray? {
+    fun path(start: Int, finish: Int, level: Int = 1): FloatArray? {
         if (pathCash?.from == start && pathCash?.to == finish) return pathCash?.path
         val que = ArrayList<Map.Dot>()
         map.getDot(start).setG(0f)
@@ -74,25 +75,26 @@ class Navigation {
             val x: Map.Dot = que[0]
             que.removeAt(0)
             if (x.getId() == finish) {
-                return reconstructPath(x.getId())
+                return reconstructPath(x.getId(), level)
             }
 
-            x.setVisited(true)
-            for (y in x.getConnected()) {
-                if (map.getDot(y).isVisited()) continue
-                var isTentativeBetter = false
-                val tentativeGScore = x.getG() + map.dist(x.getId(), y)
-                if (!que.contains(map.getDot(y))) isTentativeBetter = true
-                else if (tentativeGScore < map.getDot(y).getG()) isTentativeBetter = true
+                x.setVisited(true)
+                for (y in x.getConnected()) {
+                    if (map.getDot(y).isVisited()) continue
+                    var isTentativeBetter = false
+                    val tentativeGScore = x.getG() + map.dist(x.getId(), y)
+                    if (!que.contains(map.getDot(y))) isTentativeBetter = true
+                    else if (tentativeGScore < map.getDot(y).getG()) isTentativeBetter = true
 
-                if (isTentativeBetter) {
-                    map.getDot(y).setG(tentativeGScore)
-                    map.getDot(y).setH(map.dist(y, finish))
-                    map.getDot(y).setFromId(x.getId())
-                    que.add(map.getDot(y))
+                    if (isTentativeBetter) {
+                        map.getDot(y).setG(tentativeGScore)
+                        map.getDot(y).setH(map.dist(y, finish))
+                        map.getDot(y).setFromId(x.getId())
+                        que.add(map.getDot(y))
+                    }
                 }
-            }
         }
+
         map.clear()
         return null
     }
@@ -102,45 +104,52 @@ class Navigation {
      * @Param finish идентификатор точки конца маршрута
      * @Return массив координат точек маршрута
      */
-    private fun reconstructPath(finish: Int): FloatArray {
-        val path = ArrayList<Int>()
-        path.add(finish)
-        var from = map.getDot(finish).getFromId()
-        while (from != -1) {
-            path.add(from)
-            from = map.getDot(from).getFromId()
-        }
-        path.reverse()
-        var init = true
-        val size = path.size * 4 - 4
-        var i = 0
-        var dot = 0
-        val lines = FloatArray(size)
-        while (i < size) {
-            if (init) {
-                lines[i] = map.getDot(path[dot]).getX()
-                lines[i + 1] = map.getDot(path[dot]).getY()
-                init = false
-                i += 2
-                dot++
-            } else {
-                lines[i] = map.getDot(path[dot]).getX()
-                lines[i + 1] = map.getDot(path[dot]).getY()
-                if (i + 2 >= size) break
-                lines[i + 2] = lines[i]
-                lines[i + 3] = lines[i + 1]
-                i += 4
-                dot++
-            }
-        }
+    private fun reconstructPath(finish: Int, level: Int = 1): FloatArray {
+        try {
+            val path = ArrayList<Int>()
+            path.add(finish)
+            var from = map.getDot(finish).getFromId()
+            while (from != -1) {
+                if(level == map.getDot(from).getLevel()) {
+                    path.add(from)
+                }
 
-        pathCash = object : PathCash() {
-            override var path = lines
-            override var from = path[0]
-            override var to = path[path.size - 1]
-        }
-        map.clear()
-        return lines
+                from = map.getDot(from).getFromId()
+            }
+            if(level != map.getDot(finish).getLevel()) path.removeAt(0)
+            path.reverse()
+            var init = true
+            val size = path.size * 4 - 4
+            var i = 0
+            var dot = 0
+            val lines = FloatArray(size)
+            while (i < size) {
+                if (init) {
+                    lines[i] = map.getDot(path[dot]).getX()
+                    lines[i + 1] = map.getDot(path[dot]).getY()
+                    init = false
+                    i += 2
+                    dot++
+                } else {
+                    lines[i] = map.getDot(path[dot]).getX()
+                    lines[i + 1] = map.getDot(path[dot]).getY()
+                    if (i + 2 >= size) break
+                    lines[i + 2] = lines[i]
+                    lines[i + 3] = lines[i + 1]
+                    i += 4
+                    dot++
+                }
+            }
+
+            pathCash = object : PathCash() {
+                override var path = lines
+                override var from = path[0]
+                override var to = path[path.size - 1]
+            }
+            map.clear()
+            return lines
+        } catch (e: Exception){}
+        return FloatArray(0)
     }
 
     /**
