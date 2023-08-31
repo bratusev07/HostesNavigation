@@ -33,7 +33,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
 
             val fileHelper = FileHelper(requireContext(), "Korpus_G")
             //fileHelper.fileDownload("1rq4aFmBEvLCAhXTQ3YPbtaHkoc2_8B8v")
-            //fileHelper.fileDownload("19e-oKDYTncxJn3cL34IYkYW5QKoxJguK")
+            fileHelper.fileDownload("19e-oKDYTncxJn3cL34IYkYW5QKoxJguK")
             it.findViewById<Button>(R.id.downloadBtn).setOnClickListener{download()}
         }
     }

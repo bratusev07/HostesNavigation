@@ -40,22 +40,24 @@ class FileHelper(private val context: Context, val locationName: String) {
     internal fun fileDownload(uRl: String) {
         dataPathTmp += "$locationName/"
         unzipPathTmp += "$locationName/"
-        val request = DownloadManager.Request(Uri.parse(convertUrl(uRl)))
-            .setTitle("$locationName.zip")
-            .setDescription("Downloading")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalFilesDir(
-                context,
-                "locations/$locationName",
-                "$locationName.zip"
-            )
-            .setAllowedOverMetered(true)
-            .setAllowedOverRoaming(true)
-        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        downloadManager.enqueue(request)
+        if(!checkStorageLocation()){
+            val request = DownloadManager.Request(Uri.parse(convertUrl(uRl)))
+                .setTitle("$locationName.zip")
+                .setDescription("Downloading")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalFilesDir(
+                    context,
+                    "locations/$locationName",
+                    "$locationName.zip"
+                )
+                .setAllowedOverMetered(true)
+                .setAllowedOverRoaming(true)
+            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            downloadManager.enqueue(request)
 
-        val intentFilter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
-        context.registerReceiver(onComplete, intentFilter)
+            val intentFilter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
+            context.registerReceiver(onComplete, intentFilter)
+        }
     }
 
     /**
