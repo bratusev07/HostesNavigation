@@ -14,7 +14,10 @@ import android.content.IntentFilter
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import androidx.navigation.fragment.findNavController
 import net.lingala.zip4j.ZipFile
+import ru.bratusev.hostesnavigation.R
+import ru.bratusev.hostesnavigation.ui.main.MainFragment
 import ru.bratusev.hostesnavigation.ui.map.MapConstants.dataPath
 import ru.bratusev.hostesnavigation.ui.map.MapConstants.unzipPath
 import java.io.File
@@ -25,7 +28,7 @@ import java.io.File
  * @Param [locationName] название локации для подгрузки
  * @Constructor Создаёт FileHelper для работы с системой
  */
-class FileHelper(private val context: Context, val locationName: String) {
+class FileHelper(private val context: Context, private val fragment: MainFragment, val locationName: String) {
 
     /**
      * Скачивает архив с тайлами и графом навигации
@@ -57,6 +60,8 @@ class FileHelper(private val context: Context, val locationName: String) {
 
             val intentFilter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
             context.registerReceiver(onComplete, intentFilter)
+        }else {
+            fragment.findNavController().navigate(R.id.action_mainFragment_to_mapFragment)
         }
     }
 
@@ -109,6 +114,7 @@ class FileHelper(private val context: Context, val locationName: String) {
             val zipFile = ZipFile("$dataPathTmp$fileName.zip")
             zipFile.extractAll(unzipPathTmp)
             File("$dataPathTmp$fileName.zip").delete()
+            fragment.findNavController().navigate(R.id.action_mainFragment_to_mapFragment)
             Toast.makeText(context, "Установка успешна", Toast.LENGTH_SHORT).show()
             true
         } catch (e: Exception) {
@@ -133,10 +139,14 @@ class FileHelper(private val context: Context, val locationName: String) {
      * @Return true при наличии файла в памяти
      * */
     private fun checkStorageLocation(): Boolean {
-        for (file in File(unzipPath).listFiles()!!) {
-            if (file.name == locationName) return true
+        try {
+            for (file in File(unzipPath).listFiles()!!) {
+                if (file.name == locationName) return true
+            }
+            Toast.makeText(context, "Локация не найдена", Toast.LENGTH_SHORT).show()
+        }catch (e: Exception){
+            Log.d("MyLog", e.message.toString())
         }
-        Toast.makeText(context, "Локация не найдена", Toast.LENGTH_SHORT).show()
         return false
     }
 }

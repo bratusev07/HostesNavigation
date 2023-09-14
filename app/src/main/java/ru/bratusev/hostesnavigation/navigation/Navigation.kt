@@ -6,7 +6,6 @@
  * */
 package ru.bratusev.hostesnavigation.navigation
 
-import android.util.Log
 import kotlin.math.sqrt
 
 /**

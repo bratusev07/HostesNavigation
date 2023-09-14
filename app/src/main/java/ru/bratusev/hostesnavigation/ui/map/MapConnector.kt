@@ -12,6 +12,7 @@ import androidx.core.view.size
 import ovh.plrapps.mapview.MapView
 import ru.bratusev.hostesnavigation.R
 import ru.bratusev.hostesnavigation.navigation.Navigation
+import ru.bratusev.hostesnavigation.ui.main.MainFragment
 import ru.bratusev.hostesnavigation.ui.map.MapConstants.dotList
 import ru.bratusev.hostesnavigation.ui.map.MapConstants.finishNode
 import ru.bratusev.hostesnavigation.ui.map.MapConstants.levelArray
@@ -37,7 +38,7 @@ class MapConnector(
      * @Param [fileHelper] класс для работы с файловой системой
      * @See [FileHelper]
      * */
-    private var fileHelper = FileHelper(context, locationName)
+    private var fileHelper = FileHelper(context, MainFragment(), locationName)
 
     init {
         val json = fileHelper.getJsonMap(locationName)

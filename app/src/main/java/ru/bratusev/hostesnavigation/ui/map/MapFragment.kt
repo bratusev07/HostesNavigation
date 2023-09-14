@@ -11,9 +11,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
-import android.widget.ImageView
 import androidx.fragment.app.Fragment
 import ru.bratusev.hostesnavigation.R
+import ru.bratusev.hostesnavigation.ui.main.BleScanner
 import ru.bratusev.hostesnavigation.ui.map.MapConstants.startNode
 
 
@@ -29,13 +29,13 @@ class MapFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_map, container, false).also {
-            /*val fileHelper = FileHelper(requireContext(), "location1")
-            fileHelper.fileDownload("1rq4aFmBEvLCAhXTQ3YPbtaHkoc2_8B8v")*/
             val mapConnector = MapConnector(requireContext(), it as ViewGroup, "Korpus_G")
             it.findViewById<ImageButton>(R.id.btn_zoomIn).setOnClickListener {
                 startNode++
                 mapConnector.updatePath(136)
             }
+            val bleScanner = BleScanner(requireActivity())
+            bleScanner.startScan()
         }
     }
 }
